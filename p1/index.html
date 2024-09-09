@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CS 180 Project 1</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            background-color: #ddddff;
+            padding: 20px;
+            text-align: center;
+        }
+        .content-wrapper {
+            display: flex;
+            flex-grow: 1;
+        }
+        nav {
+            width: 200px;
+            padding: 5;
+            background-color: #ffffff;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+        }
+        nav ul {
+            list-style-type: disc;
+            border-left: 1px;
+        }
+        nav ul li {
+            margin-bottom: 10px;
+        }
+        nav ul li a {
+            text-decoration: none;
+            color: #333;
+            display: block;
+        }
+        .nav-section-divider {
+            border-top: 1px solid #ccc;
+            margin: 10px 0;
+        }
+        .section-divider {
+            border-top: 10px solid #ddddff;
+            margin: 50px 0;
+        }
+        main {
+            flex-grow: 1;
+            padding: 20px;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .grid-item {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+        .grid-item img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Colorizing the Prokudin-Gorskii Photo Collection</h1>
+        <h2>CS 180 Project 1</h2>
+        <p>Jiayang Wang</p>
+    </div>
+    <div class="content-wrapper">
+        <nav>
+            <ul>
+                <li><a href="#introduction">Introduction</a></li>
+
+                <div class="nav-section-divider"></div>
+
+                <li><a href="#small_image">Small Images</a></li>
+                <ul>
+                    <li><a href="#approach_small">Approach</a></li>
+                    <li><a href="#results_small">Results</a></li>
+                    <li><a href="#custom_small">Custom Images</a></li>
+                </ul>
+
+                <div class="nav-section-divider"></div>
+
+                <li><a href="#larger_image">Larger Images</a></li>
+                <ul>
+                    <li><a href="#approach_larger">Approach</a></li>
+                    <li><a href="#results_larger">Results</a></li>
+                    <li><a href="#custom_larger">Custom Images</a></li>
+                </ul>
+
+                <div class="nav-section-divider"></div>
+
+                <li><a href="#bells_whistles">Bells & Whistles</a></li>
+                <ul>
+                    <li><a href="#auto_cropping">Automatic Cropping</a></li>
+                    <li><a href="#results_cropping">Examples</a></li>
+                    <li><a href="#auto_contrasting">Automatic Contrasting</a></li>
+                    <li><a href="#formula_contrasting">Formula</a></li>
+                    <li><a href="#results_contrasting">Examples</a></li>
+            </ul>
+        </nav>
+        <main>
+            <div id="introduction" class="main">
+                <h1>Introduction</h1>
+                <p>Each image in the Prokudin-Gorskii collection consists of three exposures made with color separation filters
+                     of red, green, and blue respectively. This project focuses on using algorithms to align the three filters 
+                     of each image automatically, then stacking the three colors to produce a colored image. For larger images,
+                     this project uses image pyramids to optimize the alignment efficiency. In addition, this project also
+                    experimented with automatic cropping and contrasting.</p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./original/cathedral_blue.png" alt="cathedral_blue.jpg">
+                        <p>cathedral.jpg<br>Blue Channel</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./original/cathedral_green.png" alt="cathedral_green.jpg">
+                        <p>cathedral.jpg<br>Green Channel</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./original/cathedral_red.png" alt="cathedral_red.jpg">
+                        <p>cathedral.jpg<br>Red Channel</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <div id="small_image" class="main">
+                <h1>Small Images</h1>
+            </div>
+            <div id="approach_small" class="section">
+                <h2>Approach</h2>
+                <p>To align the three color channels, the algorithm needs to use one channel as the base and calculate the optimal 
+                    displacements of the other two channels over the base channel, such that both displacements result in maximum similarity
+                    between the shifted channel and the base channel.</p>
+                <p>I used an exhaustive method on small .jpg images that takes the blue channel of each image as a base channel and rolls the 
+                    red and green channels of that image through a window of possible displacements, (-15, 15) pixels on both height and width, 
+                    to search for the optimal displacement. To measure the similarity, I used the Sum of Squared Difference (SSD)
+                    as the metric to score the differences between the shifted channel and the base channel. Over the window of possible displacements, 
+                    the displacement with minimum SSD score indicates that the shifted channel and the base channel achieve maximum similarity, thus the 
+                    displacement is optimal.</p>
+                <p>At first, I applied this method on each image directly without any preprocessing, and the result images' color channels did not align
+                    well. After experimenting, I realized that as all color channels have some borders that would interfere with the displacement calculation,
+                    such as decreasing the SSD score due to the borders matching between channels, preprocessing is required to remove these artifacts.
+                    Therefore, I preprocessed each image by cropping 10% from all four sides of the image before the alignment process. This preprocessing 
+                    method ensures that the borders will have a minimum interference during the displacement search.</p>
+            </div>
+            <div id="results_small" class="section">
+                <h2>Results</h2>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./output_original/cathedral.jpg_out.jpg" alt="cathedral.jpg">
+                        <p>cathedral.jpg<br>Red: (12, 3)<br>Green: (5, 2)</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./output_original/monastery.jpg_out.jpg" alt="monastry.jpg">
+                        <p>monastry.jpg<br>Red: (3, 2)<br>Green: (-3, 2)</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./output_original/tobolsk.jpg_out.jpg" alt="tobolsk.jpg">
+                        <p>tobolsk.jpg<br>Red: (6, 3)<br>Green: (3, 3)</p>
+                    </div>
+                </div>
+            </div>
+            <div id="custom_small" class="section">
+                <h2>Custom Images</h2>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./output_custom/custom_kivach.jpg_out.jpg" alt="custom_kivach.jpg">
+                        <p>custom_kivach.jpg<br>Red: (12, 3)<br>Green: (3, 1)</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./output_custom/custom_na_dunaie.jpg_out.jpg" alt="custom_na_dunaie.jpg">
+                        <p>custom_na_dunaie.jpg<br>Red: (8, 11)<br>Green: (3, 5)</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./output_custom/custom_pamiatnik.jpg_out.jpg" alt="custom_pamiatnik.jpg">
+                        <p>custom_pamiatnik.jpg<br>Red: (8, 5)<br>Green: (1, 3)</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <div id="larger_image" class="main">
+                <h1>Larger Images</h1>
+            </div>
+            <div id="approach_larger" class="section">
+                <h2>Approach</h2>
+                <p>For larger .tif images that consist of thousands of pixels on both side, the window of possible displacements is much larger, and 
+                    the aforementioned exhaustive search will need to iterate through a larger window on more pixels, making the method alone 
+                    not effective nor efficient. </p>
+                <p>To remedy the increase in image size, I used the image pyramid technique that recursively downscale the size of images by 2 until
+                    the width is less than 500 pixels. In each layer of the pyramid, I used the exhaustive method on the image, but with an increasing
+                    window of possible displacements, starting with (-4, 4) on the original image and adding (-4, 4) after each layer. This ensures
+                    the alignment's efficiency and quality without many tradeoffs When the image size is similar to the .jpg images, I used the 
+                    default (-15, 15) window since from the previous part, it is efficient and effective for images of this size. After each recursive
+                    call, the calculated displacement from the downscaled image is multiplied by 2, and then added to the calculated displacement
+                    of the current layer.</p>
+                <div id="results_larger" class="section">
+                    <h2>Results</h2>
+                    <div class="grid">
+                        <div class="grid-item">
+                            <img src="./output_original/church.tif_out.jpg" alt="church.tif">
+                            <p>church.tif<br>Red: (58, -4)<br>Green: (25, 4)</p>
+                        </div>
+                        <div class="grid-item">
+                            <img src="./output_original/emir.tif_out.jpg" alt="emir.tif">
+                            <p>emir.tif<br>Red: (104, 56)<br>Green: (49, 24)</p>
+                        </div>
+                        <div class="grid-item">
+                            <img src="./output_original/harvesters.tif_out.jpg" alt="harvesters.tif">
+                            <p>harvesters.tif<br>Red: (124, 14)<br>Green: (60, 17)</p>
+                        </div>
+                    </div>
+                    <div class="grid">
+                        <div class="grid-item">
+                            <img src="./output_original/icon.tif_out.jpg" alt="icon.tif">
+                            <p>icon.tif<br>Red: (90, 23)<br>Green: (41, 17)</p>
+                        </div>
+                        <div class="grid-item">
+                            <img src="./output_original/lady.tif_out.jpg" alt="lady.tif">
+                            <p>lady.tif<br>Red: (112, 12)<br>Green: (52, 9)</p>
+                        </div>
+                        <div class="grid-item">
+                            <img src="./output_original/melons.tif_out.jpg" alt="melons.tif">
+                            <p>melons.tif<br>Red: (178, 13)<br>Green: (82, 10)</p>
+                        </div>
+                        <div class="grid-item">
+                            <img src="./output_original/onion_church.tif_out.jpg" alt="onion_church.tif">
+                            <p>onion_church.tif<br>Red: (108, 36)<br>Green: (52, 26)</p>
+                        </div>
+                    </div>
+                    <div class="grid">
+                        <div class="grid-item">
+                            <img src="./output_original/sculpture.tif_out.jpg" alt="sculpture.tif">
+                            <p>sculpture.tif<br>Red: (140, -27)<br>Green: (33, -11)</p>
+                        </div>
+                        <div class="grid-item">
+                            <img src="./output_original/self_portrait.tif_out.jpg" alt="self_portrait.tif">
+                            <p>self_portrait.tif<br>Red: (176, 37)<br>Green: (79, 29)</p>
+                        </div>
+                        <div class="grid-item">
+                            <img src="./output_original/three_generations.tif_out.jpg" alt="three_generations.tif">
+                            <p>three_generations.tif<br>Red: (112, 11)<br>Green: (53, 14)</p>
+                        </div>
+                        <div class="grid-item">
+                            <img src="./output_original/train.tif_out.jpg" alt="train.tif">
+                            <p>train.tif<br>Red: (87, 32)<br>Green: (42, 6)</p>
+                        </div>
+                    </div>
+                </div>
+                <div id="custom_larger" class="section">
+                    <h2>Custom Images</h2>
+                    <div class="grid">
+                        <div class="grid-item">
+                            <img src="./output_custom/custom_milanie.tif_out.jpg" alt="custom_milanie.tif">
+                            <p>custom_milanie.tif<br>Red: (-2, -55)<br>Green: (-10, -19)</p>
+                        </div>
+                        <div class="grid-item">
+                            <img src="./output_custom/custom_oranzhereie.tif_out.jpg" alt="custom_oranzhereie.tif">
+                            <p>custom_oranzhereie.tif<br>Red: (126, 34)<br>Green: (60, 28)</p>
+                        </div>
+                        <div class="grid-item">
+                            <img src="./output_custom/custom_piony.tif_out.jpg" alt="custom_piony.tif">
+                            <p>custom_piony.tif<br>Red: (156, 30)<br>Green: (75, 21)</p>
+                        </div>
+                    </div>
+                    <div class="grid">
+                        <div class="grid-item">
+                            <img src="./output_custom/custom_siren.tif_out.jpg" alt="custom_siren.tif">
+                            <p>custom_siren.tif<br>Red: (96, -25)<br>Green: (50, -6)</p>
+                        </div>
+                        <div class="grid-item">
+                            <img src="./output_custom/custom_stantsiia_soroka.tif_out.jpg" alt="custom_stantsiia_soroka.tif">
+                            <p>custom_stantsiia_soroka.tif<br>Red: (107, 0)<br>Green: (28, 1)</p>
+                        </div>
+                        <div class="grid-item">
+                            <img src="./output_custom/custom_zakat.tif_out.jpg" alt="custom_zakat.tif">
+                            <p>custom_zakat.tif<br>Red: (114, -68)<br>Green: (75, -41)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <div id="bells_whistles" class="main">
+                <h1>Bells & Whistles</h1>
+            </div>
+            <div id="auto_cropping" class="section">
+                <h2>Automatic Cropping</h2>
+                <p>The naive method of cropping predefined 10% from all sides does not work well on all aligned images since the border artifacts have
+                    different sizes across different images, and also do not align parallelly to the four sides of the image. Therefore, 
+                    I implemented an automatic cropping method that uses the average intensity value of pixels in each row/column of each color channel
+                    to determine whether each row/column of the image is a part of the border or not.</p>
+                <p>For each color channel of an image, starting from the four sides, this method will take the average intensity value of all pixels in the row/column,
+                    and then use (0.12, 0.945) as the thresholds for border detection. If the average intensity value is larger than 0.945 or smaller than 0.12, then
+                    this method will classify this row/column as a part of the border, and then move to the next row/column and repeat the process. For each side,
+                    when this method calculates the average intensity value of a row/column that's between 0.12 and 0.945, the method will consider this row/column
+                    as the start of the actual image content. Then, it will crop the image from the opposite side to this row/column, and then move to the next side of
+                    the image until all four sides of this image are cropped.</p>
+            </div>
+            <div id="results_cropping" class="section">
+                <h2>Examples</h2>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./output_original/harvesters.tif_out.jpg" alt="harvesters.tif">
+                        <p>harvesters.tif<br>Before Auto Cropping</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./output_crop/harvesters.tif_out.jpg" alt="harvesters.tif">
+                        <p>harvesters.tif<br>After Auto Cropping</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./output_original/self_portrait.tif_out.jpg" alt="self_portrait.tif">
+                        <p>self_portrait.tif<br>Before Auto Cropping</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./output_crop/self_portrait.tif_out.jpg" alt="self_portrait.tif">
+                        <p>self_portrait.tif<br>After Auto Cropping</p>
+                    </div>
+                </div>
+            </div>
+            <div id="auto_contrasting" class="section">
+                <h2>Automatic Contrasting</h2>
+                <p>For automatic contrasting, I first applied the aforementioned automatic cropping, as well as cropping an additional 5% to ensure that
+                    the interference of border artifacts is minimized. Then, I rescaled the image intensities such that for each image, the pixel with
+                    the lowest intensity across all 3 channels is rescaled to 0, and the pixel with the highest intensity across all 3 channels is rescaled to 1.
+                    For edge cases where the intensity values of the cropped 5% would be larger than 1 or less than 0, those values are bounded to 1 and 0
+                    using np.min and np.max functions.
+                </p>
+                <p>For all pixels in between, I implemented a linear and a nonlinear mapping that both maps the original intensity values to values between
+                    0 and 1. The linear mapping used the simple linear formula below, and the effect of applying this linear mapping during automatic
+                    contrasting is inconspicuous on most images. For the nonlinear mapping, the nonlinear formula below produced the plot where the
+                    gradient is the highest when the original intensity value is 0.5, and decreases as the original intensity value is closer
+                    to 0 and 1. This mapping ensures that the intensity differences between most pixels after automatic contrasting are larger, thus 
+                    creating images with more contrast.
+                </p>
+            </div>
+            <div id="formula_contrasting" class="section">
+                <h2>Formula</h2>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./formula/linear.png" alt="linear.png">
+                        <p>Linear Mapping Formula</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./formula/nonlinear.png" alt="nonlinear.png">
+                        <p>Nonlinear Mapping Formula</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./formula/nonlinear_plot.png" alt="nonlinear_plot.png">
+                        <p>Nonlinear Mapping Plot</p>
+                    </div>
+                </div>
+            </div>
+            <div id="results_contrasting" class="section">
+                <h2>Examples</h2>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./output_crop/church.tif_out.jpg" alt="church.tif">
+                        <p>church.tif<br>Before Auto Contrasting</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./output_crop_contrast_linear/church.tif_out.jpg" alt="church.tif">
+                        <p>church.tif<br>After Auto Contrasting with Linear Mapping</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./output_crop_contrast_nonlinear/church.tif_out.jpg" alt="church.tif">
+                        <p>church.tif<br>After Auto Contrasting with Nonlinear Mapping</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./output_crop/icon.tif_out.jpg" alt="icon.tif">
+                        <p>icon.tif<br>Before Auto Contrasting</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./output_crop_contrast_linear/icon.tif_out.jpg" alt="icon.tif">
+                        <p>icon.tif<br>After Auto Contrasting with Linear Mapping</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./output_crop_contrast_nonlinear/icon.tif_out.jpg" alt="icon.tif">
+                        <p>icon.tif<br>After Auto Contrasting with Nonlinear Mapping</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./output_crop/melons.tif_out.jpg" alt="melons.tif">
+                        <p>melons.tif<br>Before Auto Contrasting</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./output_crop_contrast_linear/melons.tif_out.jpg" alt="melons.tif">
+                        <p>melons.tif<br>After Auto Contrasting with Linear Mapping</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./output_crop_contrast_nonlinear/melons.tif_out.jpg" alt="melons.tif">
+                        <p>melons.tif<br>After Auto Contrasting with Nonlinear Mapping</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
