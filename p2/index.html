@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CS 180 Project 2</title>
+    <link href="https://fonts.googleapis.com/css?family=Merriweather:300,700,300italic,700italic|Source+Sans+Pro:900" rel='stylesheet'>
+    <link href='https://fonts.googleapis.com/css?family=Fira Code' rel='stylesheet'>
+    <style>
+        body {
+            background-color: #fafafa;
+            font-family: "Merriweather", Georgia, serif;
+            font-weight: 300;
+            font-size: 1rem;
+            line-height: 2;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            background-color: #ddddff;
+            padding: 20px;
+            text-align: center;
+        }
+        .content-wrapper {
+            display: flex;
+            flex-grow: 1;
+        }
+        nav {
+            width: 200px;
+            padding: 5;
+            background-color: #fafafa;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+        }
+        nav ul {
+            list-style-type: disc;
+            border-left: 1px;
+        }
+        nav ul li {
+            margin-bottom: 10px;
+        }
+        nav ul li a {
+            text-decoration: none;
+            color: #333;
+            display: block;
+        }
+        .nav-section-divider {
+            border-top: 1px solid #ccc;
+            margin: 10px 0;
+        }
+        .section-divider {
+            border-top: 10px solid #ddddff;
+            margin: 50px 0;
+        }
+        main {
+            flex-grow: 1;
+            margin: auto;
+            padding: 80px;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            margin: auto;
+            width: 80%;
+            padding: 10px;
+            gap: 20px;
+        }
+        .grid-item {
+            border: 5px solid #ddddff;
+            padding: 10px;
+            text-align: center;
+        }
+        .grid-item img {
+            max-width: 100%;
+            height: auto;
+        }
+        code {
+            font-family: 'Fira Code';
+            background-color: #f5f0ff;
+            border-radius: 0.25rem;
+            color:#7400f1;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Fun with Filters and Frequencies!</h1>
+        <h2>CS 180 Project 2</h2>
+        <p>Jiayang Wang | jiayang.wang@berkeley.edu</p>
+    </div>
+    <div class="content-wrapper">
+        <nav>
+            <ul>
+                <li><a href="#introduction">Introduction</a></li>
+
+                <div class="nav-section-divider"></div>
+
+                <li><a href="#filters">Fun with Filters</a></li>
+                <ul>
+                    <li><a href="#finite_difference_operator">Finite Difference Operator</a></li>
+                    <li><a href="#dog_filter">Derivative of Gaussian (DoG) Filter</a></li>
+                </ul>
+
+                <div class="nav-section-divider"></div>
+
+                <li><a href="#frequencies">Fun with Frequencies!</a></li>
+                <ul>
+                    <li><a href="#image_sharpening">Image "Sharpening"</a></li>
+                    <li><a href="#hybrid_images">Hybrid Images</a></li>
+                </ul>
+
+                <div class="nav-section-divider"></div>
+
+                <li><a href="#blending">Multi-resolution Blending and the Oraple journey</a></li>
+                <ul>
+                    <li><a href="#stacks">Gaussian and Laplacian Stacks</a></li>
+                    <li><a href="#multiresolution_blending">Multiresolution Blending (a.k.a. the oraple!)</a></li>
+            </ul>
+        </nav>
+        <main>
+            <div id="introduction" class="main">
+                <h1>Introduction</h1>
+                <p>This project explores ways of image frequency manipulation through various applications, including edge detection
+                    (finite difference operators), image "sharpening" (unsharp mask filter), hybrid image (low-pass and high-pass filters),
+                    and multi-resolution blending (Gaussian and Laplacian stacks).</p>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <div id="filters" class="main">
+                <h1>Fun with Filters</h1>
+            </div>
+            <div id="finite_difference_operator" class="section">
+                <h2>Finite Difference Operator</h2>
+                <p>Edges in an image can be coarsely detected where neighboring pixels have high differences in their intensity values, and
+                    the gradient magnitude image of an image shows exactly this information. To create the gradient magnitude image, 
+                    I convolved finite difference operators <code>D_x = np.array([[1], [-1]])</code> and <code>D_y = np.array([[1, -1]])</code>
+                    onto the original image to get the partial derivatives of the image on x-axis and y-axis, and stack them to get the gradient
+                    magnitude image. I then binarized the result with the intensity threshold of 71, over the range of 0~255, to filter out the 
+                    noise while retaining the real edges.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./1.1/cameraman_dx.jpg" alt="cameraman_dx.jpg">
+                        <p>dx</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./1.1/cameraman_dy.jpg" alt="cameraman_dy.jpg">
+                        <p>dy</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./1.1/cameraman_magnitude.jpg" alt="cameraman_magnitude.jpg">
+                        <p>Magnitude</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./1.1/cameraman_71.jpg" alt="cameraman_71.jpg">
+                        <p>Edges (Threshold = 71)</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="dog_filter" class="section">
+                <h2>Derivative of Gaussian (DoG) Filter</h2>
+                <p>While an appropriate threshold can filter out most of the noises, the result edge image is still relatively noisy, and the edges
+                    are also not smooth. To smooth the image, I applied a Gaussian filter <code>(size = 9, sigma = 1.5)</code> on the image that blurred it, thus diffusing the noises
+                    to neighboring pixels while smoothing the sharp edges. As the edges are smoothed, the threshold must also be lowered.
+                    Repeating the procedure in the previous part on this blurred image with the intensity threshold of 16 shows significant 
+                    differences between the two result edge images. The edges in the new edge image are smoother and thicker, clearly 
+                    showing the shape of the cameraman and the camera. The noises that presented in the lower half of the old edge image are almost all 
+                    filtered out, leaving a cleaner and clearer edge image.
+                </p>
+                <p>Since the convolution operation is associative, convolving the original image with the finite difference operators and the Gaussian filter
+                    separately should result in the same image as convolving the Gaussian filter with the finite difference operators first to create the
+                    Derivative of Gaussian (DoG) filter, and then convolve the original image with the DoG filter. I applied the DoG filter method on the
+                    same original image, and the result is shown below.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./1.2/cameraman_16_9.jpg" alt="cameraman_16_9.jpg">
+                        <p>Finite Difference Operator -> Gaussian Filter (Threshold = 16)</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./1.2/cameraman_16_9_G.jpg" alt="cameraman_16_9_G.jpg">
+                        <p>Derivative of Gaussian (DoG) Filter (Threshold = 16)</p>
+                    </div>
+                </div>
+                <p>As expected, the two results are identical, apart from some neglectable differences caused by floating point precision errors.
+                </p>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <div id="frequencies" class="main">
+                <h1>Fun with Frequencies!</h1>
+            </div>
+            <div id="image_sharpening" class="section">
+                <h2>Image "Sharpening"</h2>
+                <p>Images with stronger high frequencies often look sharper, and this is the core theory of image "sharpening" - add the high frequencies
+                    of the image back to the original image as the fake sharpness. While low-pass filters, such as Gaussian filters, retain only the low
+                    frequencies of the image by blurring it and filtering out the details (high frequencies), the high frequencies of the same image
+                    can be calculated by subtracting the blurred image from the original image, such that all low frequencies are subtracted from the
+                    original image and only the high frequencies are left.
+                </p>
+                <p>Rewrite the process as a formula, <code>result = image + alpha(image - image * Gaussian)</code> where the Gaussian filter is <code>(size = 9, sigma = 3)</code>.
+                    Using the properties of convolution,
+                    the entire formula can be combined as a single convolution operation called the unsharp mask filter. To combine the formula, replace
+                    <code>image</code> with impulse filters since <code>image * Impulse = image</code>. The formula thus becomes <code>result = image * (Impulse + 
+                    alpha(Impulse - Gaussian))</code> where <code>Impulse + alpha(Impulse - Gaussian)</code> is the unsharp mask filter.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/taj.jpg" alt="taj.jpg">
+                        <p>Original</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./2.1/taj.jpg_1_9_sharpened.jpg" alt="taj.jpg_1_9_sharpened.jpg">
+                        <p>Sharpened (alpha = 1)</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/cliff.jpg" alt="cliff.jpg">
+                        <p>Original</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./2.1/cliff.jpg_1_9_sharpened.jpg" alt="cliff.jpg_1_9_sharpened.jpg">
+                        <p>Sharpened (alpha = 1)</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/land.jpg" alt="land.jpg">
+                        <p>Original</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./2.1/land.jpg_1_9_sharpened.jpg" alt="land.jpg_1_9_sharpened.jpg">
+                        <p>Sharpened (alpha = 1)</p>
+                    </div>
+                </div>
+                <p>To confirm that the "sharpness" added using this method is not actually creating details, I picked a sharp image, blurred it using a low-pass Gaussian filter, 
+                    and then used this method to try sharpening the blurred image. The sharpened image looks sharper than the blurred image, but is
+                    still blurry compared to the original image, since this method cannot recover the lost information caused by the low-pass
+                    filter filtering out the highest frequencies.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/machine.jpg" alt="machine.jpg">
+                        <p>Original</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./2.1/machine.jpg_blur.jpg" alt="machine.jpg_blur.jpg">
+                        <p>Blurred (size = 9, sigma = 3)</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./2.1/machine.jpg_1_9_blur_sharpened.jpg" alt="machine.jpg_1_9_blur_sharpened.jpg">
+                        <p>Blurred -> Sharpened (alpha = 1)</p>
+                    </div>
+                </div>
+            </div>
+            <div id="hybrid_images" class="section">
+                <h2>Hybrid Images</h2>
+                <p>Following the <a href="http://olivalab.mit.edu/publications/OlivaTorralb_Hybrid_Siggraph06.pdf">SIGGRAPH 2006 paper</a> by
+                    Oliva, Torralba, and Schyns, I used the same method to create hybrid images that change in interpretation when the distance
+                    between the image and the viewer changes, such that when the viewing distance is close, the image with high frequencies is dominant,
+                    and when the viewing distance is far, only the image with low frequencies can be seen. For each pair of images, the
+                    <code>im_low</code> is filtered with a Gaussian low-pass filter with parameters varying between pairs such that only the low frequencies
+                    are retained, and the <code>im_high</code> is filtered with the <code>Impulse - Gaussian</code> high-pass filter, also with parameters
+                    varying between pairs, such that only the high frequencies are retained. After both images are filtered, simply adding them produces
+                    the desired hybrid image.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/onigiri.png" alt="onigiri.png">
+                        <p>Low-Frequency Image<br>(Gaussian size = 61, sigma = 20)</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./data/birb.png" alt="birb.png">
+                        <p>High-Frequency Image<br>(Gaussian size = 31, sigma = 10)</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./2.2/onigiri.png_birb.png_hybrid.jpg" alt="onigiri.png_birb.png_hybrid.jpg">
+                        <p>Hybrid Image "torigiri.jpg"</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/anakin-padme1.png" alt="anakin-padme1.png">
+                        <p>Low-Frequency Image<br>(Gaussian size = 31, sigma = 10)</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./data/anakin-padme2.png" alt="anakin-padme2.png">
+                        <p>High-Frequency Image<br>(Gaussian size = 151, sigma = 50)</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./2.2/anakin-padme1.png_anakin-padme2.png_hybrid.jpg" alt="anakin-padme1.png_anakin-padme2.png_hybrid.jpg">
+                        <p>Hybrid Image "padon-mé?.jpg"</p>
+                    </div>
+                </div>
+                <p>This process can be illustrated through frequency analysis. The images below show the log magnitude of the Fourier transform of
+                    the two input images, the filtered images, and the hybrid image. For <code>onigiri.png</code>, 
+                    the image is filtered with a low-pass filter so the FFT image has higher intensity around the center and the axes, and much lower
+                    intensity elsewhere.
+                    For <code>birb.png</code>, the image is filtered with a high-pass
+                    filter so the FFT image has lower intensity around the very center, and higher intensity elsewhere.
+                    The FFT image of the hybrid image is indeed a combination of the FFT images of the two filtered images.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./2.2/onigiri.png_original_ft.jpg" alt="onigiri.png_original_ft.jpg">
+                        <p>Low Frequency Image FFT</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./2.2/onigiri.png_filtered_ft.jpg" alt="onigiri.png_filtered_ft.jpg">
+                        <p>Filtered FFT</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./2.2/birb.png_original_ft.jpg" alt="birb.png_original_ft.jpg">
+                        <p>High Frequency Image FFT</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./2.2/birb.png_filtered_ft.jpg" alt="brib.png_filtered_ft.jpg">
+                        <p>Filtered FFT</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./2.2/onigiri.png_birb.png_hybrid.jpg_ft.jpg.jpg" alt="onigiri.png_birb.png_hybrid.jpg_ft.jpg.jpg">
+                        <p>Hybrid Image FFT</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <div id="blending" class="main">
+                <h1>Multi-resolution Blending and the Oraple journey</h1>
+            </div>
+            <div id="stacks" class="section">
+                <h2>Gaussian and Laplacian Stacks</h2>
+                <p>Gaussian stacks are Gaussian pyramids without the downsampling, such that images in the stack are all the same dimension as the 
+                    original image. Instead, each level of the Gaussian stack can be created by convolving the original image with Gaussian filters
+                    where both size and sigma of the Gaussian filter increase through each level. In my case, the maximum level of stacks is 6, the
+                    initial Gaussian filter is <code>(size = 3, sigma = 1)</code>, and both the size and sigma double for each level. 
+                    The Laplacian stack can be calculated by taking the difference between every two consecutive levels of the Gaussian stack,
+                    such that <code>laplacian_stack = gaussian_stack[:-1] - gaussian_stack[1:]</code>.
+                    The last level of the Laplacian stack is the same as the last level of the Gaussian stack.
+                </p>
+                <p>The following images are the levels 0, 2, and 4 of the Laplacian stack for both <code>apple.jpeg</code> and <code>orange.jpeg</code>. The full
+                    Gaussian stack and Laplacian stack are also presented below, stacked horizontally.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./2.3/apple.jpeg_0.jpg" alt="apple.jpeg_0.jpg">
+                        <p>apple.jpeg Laplacian Stack Level 0</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./2.3/apple.jpeg_2.jpg" alt="apple.jpeg_2.jpg">
+                        <p>apple.jpeg Laplacian Stack Level 2</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./2.3/apple.jpeg_4.jpg" alt="apple.jpeg_4.jpg">
+                        <p>apple.jpeg Laplacian Stack Level 4</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./2.3/orange.jpeg_0.jpg" alt="orange.jpeg_0.jpg">
+                        <p>orange.jpeg Laplacian Stack Level 0</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./2.3/orange.jpeg_2.jpg" alt="orange.jpeg_2.jpg">
+                        <p>orange.jpeg Laplacian Stack Level 2</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./2.3/orange.jpeg_4.jpg" alt="orange.jpeg_4.jpg">
+                        <p>orange.jpeg Laplacian Stack Level 4</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./2.3/apple.jpeg_gaussian.jpg" alt="apple.jpeg_gaussian.jpg">
+                        <p>apple.jpeg Gaussian Stack</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./2.3/apple.jpeg_laplacian.jpg" alt="apple.jpeg_laplacian.jpg">
+                        <p>apple.jpeg Laplacian Stack</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./2.3/orange.jpeg_gaussian.jpg" alt="orange.jpeg_gaussian.jpg">
+                        <p>orange.jpeg Gaussian Stack</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./2.3/orange.jpeg_laplacian.jpg" alt="orange.jpeg_laplacian.jpg">
+                        <p>orange.jpeg Laplacian Stack</p>
+                    </div>
+                </div>
+            </div>
+            <div id="multiresolution_blending" class="section">
+                <h2>Multiresolution Blending (a.k.a. the oraple!)</h2>
+                <p>Following the <a href="https://persci.mit.edu/pub_pdfs/spline83.pdf">1983 paper</a> by
+                    Burt and Adelson, I used the same method of multi-resolution blending that blends two images seamlessly. This method first calculates the Laplacian stacks
+                    of the two input images, and the Gaussian stack of the mask image. Then, for each level (frequency band) <code>i</code>, the blended stack is calculated using
+                    <code>im_blended[i] = mask_stack[i] * im1_stack[i] + (1 - mask_stack[i]) * im2_stack[i]</code>. The final blended image is produced by summing all levels of
+                    the blending stack. For this project, I decided to limit each stack to 6 levels, and use the Gaussian filter with <code>(size = 6, sigma = 2)</code>, with
+                     both the size and sigma double for each level.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/apple.jpeg" alt="apple.jpeg">
+                        <p>apple.jpeg</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./data/apple_orange_mask.png" alt="apple_orange_mask.png">
+                        <p>apple_orange_mask.png</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./data/orange.jpeg" alt="orange.jpeg">
+                        <p>orange.jpeg</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./2.4/apple.jpeg_orange.jpeg_blended.jpg" alt="apple.jpeg_orange.jpeg_blended.jpg">
+                        <p>oraple.jpg</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/milkyway.png" alt="milkyway.png">
+                        <p>milkyway.png</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./data/milkyway_blackhole_mask.png" alt="milkyway_blackhole_mask.png">
+                        <p>milkyway_blackhole_mask.png</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./data/blackhole.png" alt="blackhole.png">
+                        <p>blackhole.png</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./2.4/milkyway.png_blackhole.png_blended.jpg" alt="milkyway.png_blackhole.png_blended.jpg">
+                        <p>lets_hope_that_this_wont_happen_to_us.png</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/oraple.png" alt="oraple.png">
+                        <p>oraple.png</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./data/oraple_Efros_mask.png" alt="oraple_Efros_mask.png">
+                        <p>oraple_Efros_mask.png</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./data/Efros.png" alt="Efros.png">
+                        <p>Efros.png</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./2.4/oraple.png_Efros.png_blended.jpg" alt="./2.4/oraple.png_Efros.png_blended.jpg">
+                        <p>Efraple.png</p>
+                    </div>
+                </div>
+                <p>The images below are the Laplacian stacks of my favorite result!
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./2.4/oraple.png_laplacian.jpg" alt="oraple.png_laplacian.jpg">
+                        <p>oraple.png Masked Laplacian Stack</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./2.4/Efros.png_laplacian.jpg" alt="Efros.png_laplacian.jpg">
+                        <p>Efros.png Masked Laplacian Stack</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./2.4/oraple.png_Efros.png_blended_laplacian.jpg" alt="oraple.png_Efros.png_blended_laplacian.jpg">
+                        <p>Efraple.png Masked Laplacian Stack</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./2.4/oraple.png_laplacian_sum.jpg" alt="oraple.png_laplacian_sum.jpg">
+                        <p>oraple.png Masked Sum</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./2.4/oraple.png_Efros.png_blended.jpg" alt="oraple.png_Efros.png_blended.jpg">
+                        <p>Efraple.png</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./2.4/Efros.png_laplacian_sum.jpg" alt="Efros.png_laplacian_sum.jpg">
+                        <p>Efros.png Masked Sum</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
