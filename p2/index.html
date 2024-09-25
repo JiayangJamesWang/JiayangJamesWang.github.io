@@ -185,11 +185,11 @@
                 <div class="grid">
                     <div class="grid-item">
                         <img src="./1.2/cameraman_16_9.jpg" alt="cameraman_16_9.jpg">
-                        <p>Finite Difference Operator -> Gaussian Filter (Threshold = 16)</p>
+                        <p>Finite Difference Operator -> Gaussian Filter<br>(Threshold = 16)</p>
                     </div>
                     <div class="grid-item">
                         <img src="./1.2/cameraman_16_9_G.jpg" alt="cameraman_16_9_G.jpg">
-                        <p>Derivative of Gaussian (DoG) Filter (Threshold = 16)</p>
+                        <p>Derivative of Gaussian (DoG) Filter<br>(Threshold = 16)</p>
                     </div>
                 </div>
                 <p>As expected, the two results are identical, apart from some neglectable differences caused by floating point precision errors.
@@ -278,33 +278,47 @@
                 </p>
                 <div class="grid">
                     <div class="grid-item">
+                        <img src="./data/DerekPicture.jpg" alt="DerekPicture.jpg">
+                        <p>Low-Frequency Image<br>"DerekPicture.jpg"<br>(Gaussian size = 19, sigma = 6)</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./data/nutmeg.jpg" alt="nutmeg.jpg">
+                        <p>High-Frequency Image<br>"nutmeg.jpg"<br>(Gaussian size = 61, sigma = 20)</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./2.2/DerekPicture.jpg_nutmeg.jpg_hybrid.jpg" alt="DerekPicture.jpg_nutmeg.jpg_hybrid.jpg">
+                        <p>Hybrid Image<br>"Deremeg.jpg"</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
                         <img src="./data/onigiri.png" alt="onigiri.png">
-                        <p>Low-Frequency Image<br>(Gaussian size = 61, sigma = 20)</p>
+                        <p>Low-Frequency Image<br>"onigiri.png"<br>(Gaussian size = 61, sigma = 20)</p>
                     </div>
                     <div class="grid-item">
                         <img src="./data/birb.png" alt="birb.png">
-                        <p>High-Frequency Image<br>(Gaussian size = 31, sigma = 10)</p>
+                        <p>High-Frequency Image<br>"birb.png"<br>(Gaussian size = 31, sigma = 10)</p>
                     </div>
                     <div class="grid-item">
                         <img src="./2.2/onigiri.png_birb.png_hybrid.jpg" alt="onigiri.png_birb.png_hybrid.jpg">
-                        <p>Hybrid Image "torigiri.jpg"</p>
+                        <p>Hybrid Image<br>"torigiri.jpg"</p>
                     </div>
                 </div>
                 <div class="grid">
                     <div class="grid-item">
                         <img src="./data/anakin-padme1.png" alt="anakin-padme1.png">
-                        <p>Low-Frequency Image<br>(Gaussian size = 31, sigma = 10)</p>
+                        <p>Low-Frequency Image<br>"anakin-padme1.png"<br>(Gaussian size = 31, sigma = 10)</p>
                     </div>
                     <div class="grid-item">
                         <img src="./data/anakin-padme2.png" alt="anakin-padme2.png">
-                        <p>High-Frequency Image<br>(Gaussian size = 151, sigma = 50)</p>
+                        <p>High-Frequency Image<br>"anakin-padme2.png<br>(Gaussian size = 151, sigma = 50)</p>
                     </div>
                     <div class="grid-item">
                         <img src="./2.2/anakin-padme1.png_anakin-padme2.png_hybrid.jpg" alt="anakin-padme1.png_anakin-padme2.png_hybrid.jpg">
-                        <p>Hybrid Image "padon-mé?.jpg"</p>
+                        <p>Hybrid Image<br>"padon-mé?.jpg"</p>
                     </div>
                 </div>
-                <p>This process can be illustrated through frequency analysis. The images below show the log magnitude of the Fourier transform of
+                <p>This process of creating hybrid image can be illustrated through frequency analysis. The images below show the log magnitude of the Fourier transform of
                     the two input images, the filtered images, and the hybrid image. For <code>onigiri.png</code>, 
                     the image is filtered with a low-pass filter so the FFT image has higher intensity around the center and the axes, and much lower
                     intensity elsewhere.
@@ -336,6 +350,24 @@
                     <div class="grid-item">
                         <img src="./2.2/onigiri.png_birb.png_hybrid.jpg_ft.jpg.jpg" alt="onigiri.png_birb.png_hybrid.jpg_ft.jpg.jpg">
                         <p>Hybrid Image FFT</p>
+                    </div>
+                </div>
+                <p>However, when the shape of the two images are too similar, the hybrid effect will be less visible, and the hybrid image will
+                    stay the same independent of the viewing distance. Also, when the original high-frequency image is vibrant, the filtered image
+                    will lose the high-saturation color, leaving only a transparent shape. Below is one example of the said failure.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/cockatoo.jpg" alt="cockatoo.jpg">
+                        <p>Low-Frequency Image<br>"cockatoo.jpg"<br>(Gaussian size = 16, sigma = 5)</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./data/gumi.jpg" alt="gumi.jpg">
+                        <p>High-Frequency Image<br>"gumi.jpg"<br>(Gaussian size = 31, sigma = 10)</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./2.2/cockatoo.jpg_gumi.jpg_hybrid.jpg" alt="cockatoo.jpg_gumi.jpg_hybrid.jpg">
+                        <p>Hybrid Image<br>"wuewuewaaah.jpg"<br>Failure, but sooooo cute</p>
                     </div>
                 </div>
             </div>
