@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CS 180 Project 3</title>
+    <link href="https://fonts.googleapis.com/css?family=Merriweather:300,700,300italic,700italic|Source+Sans+Pro:900" rel='stylesheet'>
+    <link href='https://fonts.googleapis.com/css?family=Fira Code' rel='stylesheet'>
+    <style>
+        body {
+            background-color: #fafafa;
+            font-family: "Merriweather", Georgia, serif;
+            font-weight: 300;
+            font-size: 1rem;
+            line-height: 2;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            background-color: #ddddff;
+            padding: 20px;
+            text-align: center;
+        }
+        .content-wrapper {
+            display: flex;
+            flex-grow: 1;
+        }
+        .vertical_slide {
+            overflow-x: auto;
+        }
+        nav {
+            width: 225px;
+            padding: 5;
+            background-color: #fafafa;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: scroll;
+        }
+        nav ul {
+            list-style-type: disc;
+            border-left: 1px;
+        }
+        nav ul li {
+            margin-bottom: 10px;
+        }
+        nav ul li a {
+            text-decoration: none;
+            color: #333;
+            display: block;
+        }
+        .nav-section-divider {
+            border-top: 1px solid #ccc;
+            margin: 10px 0;
+        }
+        .section-divider {
+            border-top: 10px solid #ddddff;
+            margin: 50px 0;
+        }
+        main {
+            flex-grow: 1;
+            margin: auto;
+            padding: 80px;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            margin: auto;
+            width: 80%;
+            padding: 10px;
+            gap: 20px;
+        }
+        .grid-item {
+            border: 5px solid #ddddff;
+            padding: 10px;
+            text-align: center;
+        }
+        .grid-item img {
+            max-width: 100%;
+            height: auto;
+        }
+        code {
+            font-family: 'Fira Code';
+            background-color: #f5f0ff;
+            border-radius: 0.25rem;
+            color:#7400f1;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Face Morphing</h1>
+        <h2>CS 180 Project 3</h2>
+        <p>Jiayang Wang | jiayang.wang@berkeley.edu</p>
+    </div>
+    <div class="content-wrapper">
+        <vertical_slide>
+            <nav>
+                <ul>
+                    <li><a href="#introduction">Introduction</a></li>
+
+                    <div class="nav-section-divider"></div>
+
+                    <li><a href="#correspondences">Defining Correspondences</a></li>
+                    <ul>
+                        <li><a href="#approach_1">Approach</a></li>
+                        <li><a href="#results_1">Results</a></li>
+                    </ul>
+
+                    <div class="nav-section-divider"></div>
+
+                    <li><a href="#midway_face">Computing the "Mid-way Face"</a></li>
+                    <ul>
+                        <li><a href="#approach_2">Approach</a></li>
+                        <li><a href="#results_2">Results</a></li>
+                    </ul>
+
+                    <div class="nav-section-divider"></div>
+
+                    <li><a href="#morph_sequence">The Morph Sequence</a></li>
+                    <ul>
+                        <li><a href="#approach_3">Approach</a></li>
+                        <li><a href="#results_3">Results</a></li>
+                    </ul>
+                    
+                    <div class="nav-section-divider"></div>
+
+                    <li><a href="#population">The "Mean face" of a population</a></li>
+                    <ul>
+                        <li><a href="#approach_4">Approach</a></li>
+                        <li><a href="#results_4">Results</a></li>
+                    </ul>
+
+                    <div class="nav-section-divider"></div>
+
+                    <li><a href="#extrapolate">Caricatures: Extrapolating from the mean</a></li>
+                    <ul>
+                        <li><a href="#approach_5">Approach</a></li>
+                        <li><a href="#results_6">Results</a></li>
+                    </ul>
+
+                    <div class="nav-section-divider"></div>
+
+                    <li><a href="#b_w">Bells & Whistles</a></li>
+                    <ul>
+                        <li><a href="#change">Gender Change</a></li>
+                        <li><a href="#pca">PCA</a></li>
+                    </ul>
+                </ul>
+            </nav>
+        </vertical_slide>
+        <main>
+            <div id="introduction" class="main">
+                <h1>Introduction</h1>
+                <p>This project explores ways that morph images of faces into each other, a two-step process including
+                    warping the image shapes and cross-dissolving image colors. I explored methods including Delaunay
+                    triangulation, affine transformation, and inverse warping that can be used to produce more natural
+                    and believable face morphings.
+                </p>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <div id="correspondences" class="main">
+                <h1>Defining Correspondences</h1>
+            </div>
+            <div id="approach_1" class="section">
+                <h2>Approach</h2>
+                <p>For this project, I used the face images of myself and my friend Eric. To warp the two faces into 
+                    the same shape, such that the facial features and face shapes in the two images
+                    align with each other, I defined pairs of corresponding points on the two images using <code>ginput</code>
+                    in a consistent order, and added the four corners of the image such that each image has 72
+                    corresponding points. 
+                    To generate trianges within each set of corresponding points, I first calculated the mid-way shape (the
+                    average value of the two point sets), and then generated a Delaunary triangulation for each image using
+                    <code>scipy.spatial.Delaunay</code>.
+                </p>
+            </div>
+            <div id="results_1" class="section">
+                <h2>Results</h2>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./1/Jiayang_triangle.png" alt="Jiayang_triangle.png">
+                        <p>Jiayang (me)<br>Correspondences + Triangulation</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./1/Eric_triangle.png" alt="Eric_triangle.png">
+                        <p>Eric<br>Correspondences + Triangulation</p>
+                    </div>
+                </div>
+                <p>From the results, we can see that Delaunary triangulation does not produce overly skinny triangles, and
+                    computing the midway shape helps in avoiding potential triangle deformations. 
+                </p>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <div id="midway_face" class="main">
+                <h1>Computing the "Mid-way Face"</h1>
+            </div>
+            <div id="approach_2" class="section">
+                <h2>Approach</h2>
+                <p>The mid-way face can be computed by warping both shapes into the mid-way shape calculated in the previous
+                    part, and then cross-dissolve the colors.
+                </p>
+                <p>Warping triangles can be represented as multiplying the triangles with an affine transformation matrix <code>A</code>.
+                    Therefore, I calculated <code>A</code> for each pair of triangles and took the inverse of the matrices, multiplying
+                    the inverses with the target triangles (the mid-way shape) to get the coordinates that I needed to interpolate from the original
+                    images. I first tried <code>scipy.interpolate.griddata</code> with linear interpolation but the efficiency is too
+                    low. Therefore, I switched to nearest neighbor interpolation and reduced the processing time to under 2 minutes.
+                </p>
+                <p>After warping both image shapes into the mid-way shape, the cross-dissolving step is just simply averaging the
+                    pixel intensities between the two warped images.
+                </p>
+            </div>
+            <div id="results_2" class="section">
+                <h2>Results</h2>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./2/Jiayang.jpg" alt="Jiayang.jpg">
+                        <p>Jiayang</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./2/Jeric.jpg" alt="Jeric.jpg">
+                        <p>Jiayang + Eric = Jeric</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./2/Eric.jpg" alt="Eric.jpg">
+                        <p>Eric</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+            
+            <div id="morph_sequence" class="main">
+                <h1>The Morph Sequence</h1>
+            </div>
+            <div id="approach_3" class="section">
+                <h2>Approach</h2>
+                <p>Expanding the morph function in the last part, I modified it so it can take any two images as input, and
+                    added the parameters <code>warp_frac</code> and <code>dissolve_frac</code>, bounded at <code>[0, 1]</code>, that control
+                    the extent of warping and  cross-dissolving respectively, such that the starting frame has both parameters
+                    set to 0, and the ending frame has both parameters set to 1.
+                </p>
+                <p>To create an animated morphing sequence with 45 frames and 30 fps, I repeatedly called the morph function,
+                    increasing both <code>warp_frac</code> and <code>dissolve_frac</code> by 1/45 every frame, and then merge
+                    the computed 45 morphed images into a gif.
+                </p>
+            </div>
+            <div id="results_3" class="section">
+                <h2>Results</h2>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./3/Jeric.gif" alt="Jeric.gif">
+                        <p>Jeric morphing</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+            
+            <div id="population" class="main">
+                <h1>The "Mean face" of a population</h1>
+            </div>
+            <div id="approach_4" class="section">
+                <h2>Approach</h2>
+                <p>For this part of the project, I used the
+                    <a href="https://web.archive.org/web/20210305094647/http://www2.imm.dtu.dk/~aam/datasets/datasets.html">Danes</a>
+                    dataset with annotated correspondences. I computed the average shape of the whole population, which is
+                    the mean value of each corresponding point across the whole population, and warped each of the faces in the dataset
+                    into the average shape. Then I cross-dissolved all warped images to compute the average face of the whole population.
+                </p>
+            </div>
+            <div id="results_4" class="section">
+                <h2>Results</h2>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/danes/08-1f.bmp" alt="08-1f.bmp">
+                        <p>Example 1 (08-1f.bmp)</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./4/08-1f.bmp_warped.jpg" alt="08-1f.bmp_warped.jpg">
+                        <p>Warped</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/danes/34-1m.bmp" alt="34-1m.bmp">
+                        <p>Example 2 (34-1m.bmp)</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./4/34-1m.bmp_warped.jpg" alt="34-1m.bmp_warped.jpg">
+                        <p>Warped</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/danes/35-1f.bmp" alt="35-1f.bmp">
+                        <p>Example 3 (35-1f.bmp)</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./4/35-1f.bmp_warped.jpg" alt="35-1f.bmp_warped.jpg">
+                        <p>Warped</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/danes/36-1m.bmp" alt="36-1m.bmp">
+                        <p>Example 4 (36-1m.bmp)</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./4/36-1m.bmp_warped.jpg" alt="36-1m.bmp_warped.jpg">
+                        <p>Warped</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./4/danes_average.jpg" alt="danes_average.jpg">
+                        <p>Average Face</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./4/danes_average_female.jpg" alt="danes_average_female.jpg">
+                        <p>Average Female Face</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./4/danes_average_male.jpg" alt="danes_average_male.jpg">
+                        <p>Average Male Face</p>
+                    </div>
+                </div>
+                <p>
+                    Using the calculated average shape of the whole population, and my face with re-defined correspondences that matched
+                    the keypoints used in the Danes dataset, I warped my face into the average geometry, and also warped the average face
+                    into my geometry.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./4/Jiayang_to_danes.jpg" alt="Jiayang_to_danes.jpg">
+                        <p>Jiayang to Average Danes</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./4/danes_to_Jiayang.jpg" alt="danes_to_Jiayang.jpg">
+                        <p>Average Danes to Jiayang</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+            
+            <div id="extrapolate" class="main">
+                <h1>Caricatures: Extrapolating from the mean</h1>
+            </div>
+            <div id="approach_5" class="section">
+                <h2>Approach</h2>
+                <p>I calculated caricatures of my face by extrapolating from the the average shape of the Danes dataset, setting
+                    <code>warp_frac</code> to values greater than 1. I tried 1.5 and 3, and the result images are quite funny.
+                </p>
+            </div>
+            <div id="results_5" class="section">
+                <h2>Results</h2>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./5/Jiayang_to_danes_extrapolated_1.5.jpg" alt="Jiayang_to_danes_extrapolated_1.5.jpg">
+                        <p><code>warp_frac = 1.5</code></p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./5/Jiayang_to_danes_extrapolated_3.jpg" alt="Jiayang_to_danes_extrapolated_3.jpg">
+                        <p><code>warp_frac = 3</code></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+            
+            <div id="b_w" class="main">
+                <h1>Bells and Whistles</h1>
+            </div>
+            <div id="change" class="section">
+                <h2>Gender Change</h2>
+                <p>I used the 
+                    <a href="https://pmsol3.wordpress.com/2009/10/10/world-of-facial-averages-east-southeast-asia-pacific-islander/">average Chinese woman</a>
+                    image off the web, and morphed it with my face image with various parameter settings. The result images below showed morphing just the shape
+                    (only warping), just the appearance (only cross-dissolving), and both.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/Jiayang.png" alt="Jiayang.png">
+                        <p>Jiayang</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./data/female_b&w.png" alt="female_b&w.png">
+                        <p>Reference</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./b&w/Jiayang_gender_shape.jpg" alt="Jiayang_gender_shape.jpg">
+                        <p>Shape only</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./b&w/Jiayang_gender_appearance.jpg" alt="Jiayang_gender_appearance.jpg">
+                        <p>Appearance only</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./b&w/Jiayang_gender_both.jpg" alt="Jiayang_gender_both.jpg">
+                        <p>Both</p>
+                    </div>
+                </div>
+            </div>
+            <div id="pca" class="section">
+                <h2>PCA Basis</h2>
+                <p>With the Danes dataset warped into the average shape, I computed the dataset's PCA basis for the face space. Below are the first 12 "eigenfaces" -
+                    the principle components with the most variance, sorted in decreasing order.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./b&w/eigenface_0.jpg" alt="eigenface_0.jpg">
+                        <p>Eigenface 1</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./b&w/eigenface_1.jpg" alt="eigenface_1.jpg">
+                        <p>Eigenface 2</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./b&w/eigenface_2.jpg" alt="eigenface_2.jpg">
+                        <p>Eigenface 3</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./b&w/eigenface_3.jpg" alt="eigenface_3.jpg">
+                        <p>Eigenface 4</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./b&w/eigenface_4.jpg" alt="eigenface_4.jpg">
+                        <p>Eigenface 5</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./b&w/eigenface_5.jpg" alt="eigenface_5.jpg">
+                        <p>Eigenface 6</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./b&w/eigenface_6.jpg" alt="eigenface_6.jpg">
+                        <p>Eigenface 7</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./b&w/eigenface_7.jpg" alt="eigenface_7.jpg">
+                        <p>Eigenface 8</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./b&w/eigenface_8.jpg" alt="eigenface_8.jpg">
+                        <p>Eigenface 9</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./b&w/eigenface_9.jpg" alt="eigenface_9.jpg">
+                        <p>Eigenface 10</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./b&w/eigenface_10.jpg" alt="eigenface_10.jpg">
+                        <p>Eigenface 11</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./b&w/eigenface_11.jpg" alt="eigenface_11.jpg">
+                        <p>Eigenface 12</p>
+                    </div>
+                </div>
+                <p>Then, I tried to reconstruct the faces in the warped Danes dataset with only the first 12 eigenfaces as the face space. The reconstructed faces
+                    are already similar to the original faces, and easily distinguishable, which supports the idea that the first few principle components contains
+                    the most variance, thus details that distinguish each face from other faces.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./4/01-1m.bmp_warped.jpg" alt="01-1m.bmp_warped.jpg">
+                        <p>Example 1 (01-1m.bmp)</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./b&w/01-1m.bmp_reconstructed.jpg" alt="01-1m.bmp_reconstructed.jpg">
+                        <p>Reconstructed</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./4/07-1m.bmp_warped.jpg" alt="07-1m.bmp_warped.jpg">
+                        <p>Example 2 (07-1m.bmp)</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./b&w/07-1m.bmp_reconstructed.jpg" alt="07-1m.bmp_reconstructed.jpg">
+                        <p>Reconstructed</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./4/35-1f.bmp_warped.jpg" alt="35-1f.bmp_warped.jpg">
+                        <p>Example 3 (35-1f.bmp)</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./b&w/35-1f.bmp_reconstructed.jpg" alt="35-1f.bmp_reconstructed.jpg">
+                        <p>Reconstructed</p>
+                    </div>
+                </div>
+                <p>I also tried transforming my own face image, without any modification, into this face space of 37 eigenfaces, and then reconstruct it.
+                    The result is kinda disturbing, and also does not look like my face at all, probably because my face is not in the dataset that originally
+                    established this face space, and that the background color of my face image is too different from the dark green background of the Danes dataset.
+                    I changed the background color of my face image to dark green, and the reconstructed result is significantly better.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/Jiayang_danes.png" alt="Jiayang_danes.png">
+                        <p>Jiayang</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./b&w/Jiayang_reconstructed.jpg" alt="Jiayang_reconstructed.jpg">
+                        <p>Reconstructed</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/Jiayang_danes_background.png" alt="Jiayang_danes_backgroun.png">
+                        <p>Jiayang with Background Change</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./b&w/Jiayang_reconstructed_background.jpg" alt="Jiayang_reconstructed_background.jpg">
+                        <p>Reconstructed with Background Change</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
