@@ -94,7 +94,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>Face Morphing</h1>
+        <h1>Face Morphing and Modelling a Photo Collection</h1>
         <h2>CS 180 Project 3</h2>
         <p>Jiayang Wang | jiayang.wang@berkeley.edu</p>
     </div>
@@ -150,6 +150,7 @@
                     <ul>
                         <li><a href="#change">Gender Change</a></li>
                         <li><a href="#pca">PCA</a></li>
+                        <li><a href="#pca_morph">PCA Morphing</a></li>
                     </ul>
                 </ul>
             </nav>
@@ -417,7 +418,7 @@
             <div id="pca" class="section">
                 <h2>PCA Basis</h2>
                 <p>With the Danes dataset warped into the average shape, I computed the dataset's PCA basis for the face space. Below are the first 12 "eigenfaces" -
-                    the principle components with the most variance, sorted in decreasing order.
+                    the principal components with the most variance, sorted in decreasing order.
                 </p>
                 <div class="grid">
                     <div class="grid-item">
@@ -470,7 +471,7 @@
                     </div>
                 </div>
                 <p>Then, I tried to reconstruct the faces in the warped Danes dataset with only the first 12 eigenfaces as the face space. The reconstructed faces
-                    are already similar to the original faces, and easily distinguishable, which supports the idea that the first few principle components contains
+                    are already similar to the original faces, and easily distinguishable, which supports the idea that the first few principal components contains
                     the most variance, thus details that distinguish each face from other faces.
                 </p>
                 <div class="grid">
@@ -528,6 +529,33 @@
                         <p>Reconstructed with Background Change</p>
                     </div>
                 </div>
+            </div>
+            <div id="pca_morph" class="section"></div>
+                <h2>A Different Morphing Algorithm Using PCA and Face Space</h2>
+                <p>In this face space computed from the warped Danes dataset, I tried a different morphing algorithm that produce a smooth transition
+                    between faces. Instead of the morphing algorithm that consists of a warping step and a cross-dissoling step that is discussed in the parts above,
+                    my new morphing algorithm in this face space morph faces by changing the weights of each of the 37 eigenface during reconstructing the face image.
+                    For example, I want to morph face A into face B, which are both in the Danes dataset, in 37 frames. The first frame is a reconstruction of face A
+                    using all 37 eigenfaces and corresponding weights, which is represented by the V^T matrix of face A calculated using PCA. For all frames after this, the n-th frame
+                    is a reconstructed face also using all 37 eigenfaces and weights, but have the first <code>n</code> weights of face A replaced with the first <code>n</code>
+                    weights of face B. Therefore, the 37th frame will have all weights replaced with the weights (V^T) of face B, and the reconstructed face is exactly
+                    face B. This process will successfully create a smooth morphing sequence from face A to face B.
+                </p>
+                <p>Using this new morphing algorithm, I morphed between the first 5 faces of the warped Danes dataset, and merged the result image sequence into
+                    a gif loop.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./b&w/eigenface_morph.gif" alt="eigenface_morph.gif">
+                        <p>The First 5 Faces in Danes Dataset<br>Produced Using a Different Morphing Algorithm</p>
+                    </div>
+                </div>
+                <p>While the original morphing algorithm produces a smooth transition of shapes and colors, this new morphing algorithm produces a unique transition animation
+                    that consists of "ghosts" that are the weighted combinitions of eigenfaces. This algorithm also requires less computation as each frame is just
+                    a weighted linear combination of eigenfaces. An interesting thing to note is that the first few frames of each morphing sequence contains the most changes,
+                    while the frames toward the end of each morphing contains less changes and converge to the target face. This is another representation of the property 
+                    of principal components and eigenfaces, that first few principal components contains the most variance.
+                </p>
             </div>
         </main>
     </div>
