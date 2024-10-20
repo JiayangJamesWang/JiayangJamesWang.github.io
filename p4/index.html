@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CS 180 Project 4</title>
+    <link href="https://fonts.googleapis.com/css?family=Merriweather:300,700,300italic,700italic|Source+Sans+Pro:900" rel='stylesheet'>
+    <link href='https://fonts.googleapis.com/css?family=Fira Code' rel='stylesheet'>
+    <style>
+        body {
+            background-color: #fafafa;
+            font-family: "Merriweather", Georgia, serif;
+            font-weight: 300;
+            font-size: 1rem;
+            line-height: 2;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            background-color: #ddddff;
+            padding: 20px;
+            text-align: center;
+        }
+        .content-wrapper {
+            display: flex;
+            flex-grow: 1;
+        }
+        .vertical_slide {
+            overflow-x: auto;
+        }
+        nav {
+            width: 225px;
+            padding: 5;
+            background-color: #fafafa;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: scroll;
+        }
+        nav ul {
+            list-style-type: disc;
+            border-left: 1px;
+        }
+        nav ul li {
+            margin-bottom: 10px;
+        }
+        nav ul li a {
+            text-decoration: none;
+            color: #333;
+            display: block;
+        }
+        .nav-section-divider {
+            border-top: 1px solid #ccc;
+            margin: 10px 0;
+        }
+        .section-divider {
+            border-top: 10px solid #ddddff;
+            margin: 50px 0;
+        }
+        main {
+            flex-grow: 1;
+            margin: auto;
+            padding: 80px;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            margin: auto;
+            width: 80%;
+            padding: 10px;
+            gap: 20px;
+        }
+        .grid-item {
+            border: 5px solid #ddddff;
+            padding: 10px;
+            text-align: center;
+        }
+        .grid-item img {
+            max-width: 100%;
+            max-height: 500px;
+            height: auto;
+        }
+        code {
+            font-family: 'Fira Code';
+            background-color: #f5f0ff;
+            border-radius: 0.25rem;
+            color:#7400f1;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>(Auto)stitching and Photo Mosaics</h1>
+        <h2>CS 180 Project 4</h2>
+        <p>Jiayang Wang | jiayang.wang@berkeley.edu</p>
+    </div>
+    <div class="content-wrapper">
+        <vertical_slide>
+            <nav>
+                <ul>
+                    <li><a href="#introduction">Introduction</a></li>
+
+                    <div class="nav-section-divider"></div>
+
+                    <li><a href="#part_a">Part A: Image Warping and Mosaicing</a></li>
+                    <ul>
+                        <li><a href="#pictures">Shoot the Pictures</a></li>
+                        <li><a href="#homographies">Recover Homographies</a></li>
+                        <li><a href="#warping">Warp the Images</a></li>
+                        <li><a href="#rectification">Image Rectification</a></li>
+                        <li><a href="#blending">Blend the Images into A Mosaic</a></li>
+                    </ul>
+                </ul>
+            </nav>
+        </vertical_slide>
+        <main>
+            <div id="introduction" class="main">
+                <h1>Introduction</h1>
+                <p>The first part of this project goes through the basics of stitching image mosaics, including computing
+                    homographies through correspondence points, using the homographies to warp images such that the correspondence points overlap with
+                    each other, and blending warped images using Laplacian pyramid.
+                </p>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <div id="part_a" class="main">
+                <h1>Part A: Image Warping and Mosaicing</h1>
+            </div>
+            <div id="pictures" class="section">
+                <h2>Shoot the Pictures</h2>
+                <p>To capture sets of photos that are projective transformations of each other, I need to fix the center of projection for each set.
+                    Therefore, I hold my phone such that the camera is on the rotation axis, and make sure each image in a set has about 40% to 70%
+                    overlap with the center image.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/univhall_1.jpg" alt="univhall_1.jpg">
+                        <p>univhall_1.jpg</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./data/univhall_2.jpg" alt="univhall_2.jpg">
+                        <p>univhall_2.jpg<br>Center Image</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./data/univhall_3.jpg" alt="univhall_3.jpg">
+                        <p>univhall_3.jpg</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/entrance_1.jpg" alt="entrance_1.jpg">
+                        <p>entrance_1.jpg</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./data/entrance_2.jpg" alt="entrance_2.jpg">
+                        <p>entrance_2.jpg<br>Center Image</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./data/entrance_3.jpg" alt="entrance_3.jpg">
+                        <p>entrance_3.jpg</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/night_1.jpg" alt="night_1.jpg">
+                        <p>night_1.jpg</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./data/night_2.jpg" alt="night_2.jpg">
+                        <p>night_2.jpg<br>Center Image</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./data/night_3.jpg" alt="night_3.jpg">
+                        <p>night_3.jpg</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="homographies" class="section">
+                <h2>Recover Homographies</h2>
+                <p>For each pair of images, I need to recover a projective transformation below, where <code>H</code> is the homography matrix with 8 degrees of freedom.    
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A2/formula_H.png" alt="formula_H.png">
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A2/formula_projective.png" alt="formula_projective.png">
+                    </div>
+                </div>
+                <p>After manually entering the correspondence points for each pair of images using <code>ginput</code>, I used <code>np.linalg.pinv</code> to
+                    calculate the least-square solution for <code>H</code> in the following system, where each <code>(x, y)</code> and <code>(x', y')</code> is a pair of
+                    correspondence points in the source and the target image.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A2/formula_least_squares.png" alt="formula_least_squares.png">
+                    </div>
+                </div>
+                <p>
+                    Each coordinate <code>(x, y)</code> in the source image can be transformed to the target coordinate <code>(x', y')</code> by multiplying <code>H</code>
+                    and then dividing <code>w</code>, which acts as a scaling factor.
+                </p>
+            </div>
+
+            <div id="warping" class="section">
+                <h2>Warp the Images</h2>
+                <p>After calculating the homography for each pair of images, I warped the source image to the target image using the following warping algorithm:
+                </p>
+                <p>1. Get the coordinates of the 4 corners of the source image and apply the homography on them. Use <code>skimage.draw.polygon</code> on the result coordinates
+                    to get all pixels in the transformed polygon that will be used in inverse warping, as well as perdicting the size of the warped image.<br>
+                    2. For each pixel in this polygon, apply the inverse of the homography on its coordinate to get the sampling coordinate in the source image, and then interpolate
+                     this pixel from the source image using <code>scipy.interpolate.griddata</code>.<br>
+                    3. For pixels without any values in the warped image, set the values of the alpha channel to 0. This helps with image blending.
+                </p>
+            </div>
+
+            <div id="rectification" class="section">
+                <h2>Image Rectification</h2>
+                <p>With the above algorithms, I can use projective transformations to warp images between each other by defining correspondences.
+                    For image rectification, I manually marked the four corners of the known rectangular object in the input image, and then defines the correspondences
+                    using a function that calculates the corner coordinates of a rectangle with similar size to the input corners.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/computer_instruct.png" alt="computer_instruct.png">
+                        <p>computer.png<br>+ Correspondences</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A3/computer.png_rectified.png" alt="computer.png_rectified.png">
+                        <p>Rectified</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/roof_instruct.jpg" alt="roof_instruct.jpg">
+                        <p>roof.jpg<br>+ Correspondences</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A3/roof.jpg_rectified.png" alt="roof.jpg_rectified.png">
+                        <p>Rectified</p>
+                    </div>
+                </div>
+                <p>Using the four pairs of correspondences, I recovered the homography between the input image and the calculated rectangle, and then used the warping algorithm
+                    described above to warp the input image such that the known rectangular object is now a rectangle in the output image.
+                </p>
+            </div>
+
+            <div id="blending" class="section">
+                <h2>Blend the Images into A Mosaic</h2>
+                <p>To stitch a set of three photos into a mosaic, I defined the base photo as the "center" photo in the set, and marked the correspondence points between
+                    the base photo and the other two photos. In this case, I marked 9 points for each images, as this overdetermined system is relatively more stable and
+                    less prone to noise compare to only 4 points. Then, I warped other photos into the base photo using the algorithms described above. However, notice that 
+                    when combining the warped photos and creating the mosaic, simply overwriting photos with each other will lead to visible edge artifacts. 
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A4/univhall_2.jpg_mosaic_naive.png" alt="univhall_2.jpg_mosaic_naive.png">
+                        <p>Naive Blending with Artifacts</p>
+                    </div>
+                </div>
+                <p>To remove these
+                    artifacts, I first calculated a distance transform mask for each warped photo, where each pixel in the mask shows its Euclidean distance to the closest
+                    boundary of the warped image.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A4/image_1_mask.png" alt="image_1_mask.png">
+                        <p>univhall_1.jpg<br>Distance Transform</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A4/base_mask.png" alt="base_mask.png">
+                        <p>univhall_2.jpg<br>Distance Transform</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A4/image_2_mask.png" alt="image_2_mask.png">
+                        <p>univhall_3.jpg<br>Distance Transform</p>
+                    </div>
+                </div>
+                <p>After getting the distance transform masks, I computed a 2-level Laplacian pyramid on each photo to produce a low-pass filtered
+                    blurred photo and a high-pass filtered photo with only high frequency details, and then blend the low-pass photos and high-pass photos using different
+                    methods.
+                </p>
+                <p>The overlapping region of each pair of low-pass photos are blended using a weighted linear combination, where the weights are determined by the
+                    distance transform masks, such that pixels closer toward the center of each photo have higher weights.
+                </p>
+                <p>The overlapping region of each pair of high-pass photos are blended using a binary mask calculated from the distance transform masks, such that for each pixel
+                    in the overlapping region, its value is taken from the high-pass photo with higher distance transform value.
+                </p>
+                <p>Using this blending method, the result has smoother transition and much less artifacts
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/univhall_1.jpg" alt="univhall_1.jpg">
+                        <p>univhall_1.jpg</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./data/univhall_instruct.jpg" alt="univhall_instruct.jpg">
+                        <p>univhall_2.jpg<br>+ Correspondences</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./data/univhall_3.jpg" alt="univhall_3.jpg">
+                        <p>univhall_3.jpg</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A4/univhall_2.jpg_mosaic.png" alt="univhall_2.jpg_mosaic.png">
+                        <p>univhall Mosiac</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/entrance_1.jpg" alt="entrance_1.jpg">
+                        <p>entrance_1.jpg</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./data/entrance_instruct.jpg" alt="entrance_instruct.jpg">
+                        <p>entrance_2.jpg<br>+ Correspondences</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./data/entrance_3.jpg" alt="entrance_3.jpg">
+                        <p>entrance_3.jpg</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A4/entrance_2.jpg_mosaic.png" alt="entrance_2.jpg_mosaic.png">
+                        <p>entrance Mosiac</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/night_1.jpg" alt="night_1.jpg">
+                        <p>night_1.jpg</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./data/night_instruct.jpg" alt="night_instruct.jpg">
+                        <p>night_2.jpg<br>+ Correspondences</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./data/night_3.jpg" alt="night_3.jpg">
+                        <p>night_3.jpg</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A4/night_2.jpg_mosaic.png" alt="night_2.jpg_mosaic.png">
+                        <p>night Mosiac</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
