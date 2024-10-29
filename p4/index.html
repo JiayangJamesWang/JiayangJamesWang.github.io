@@ -115,6 +115,22 @@
                         <li><a href="#rectification">Image Rectification</a></li>
                         <li><a href="#blending">Blend the Images into A Mosaic</a></li>
                     </ul>
+                    
+                    <div class="nav-section-divider"></div>
+
+                    <li><a href="#part_b">Part B: Feature Matching for Autostitching</a></li>
+                    <ul>
+                        <li><a href="#detector">Harris Interest Point Detector</a></li>
+                        <li><a href="#anms">Adaptive Non-Maximal Suppression</a></li>
+                        <li><a href="#extraction">Feature Descriptor Extraction</a></li>
+                        <li><a href="#matching">Feature Matching</a></li>
+                        <li><a href="#ransac">RANSAC for Robust Homography Estimation</a></li>
+                        <li><a href="#results">Results using Autostitching</a></li>
+                    </ul>
+
+                    <div class="nav-section-divider"></div>
+
+                    <li><a href="#reflection">Reflection</a></li>
                 </ul>
             </nav>
         </vertical_slide>
@@ -355,6 +371,184 @@
                         <p>night Mosiac</p>
                     </div>
                 </div>
+            </div>
+            
+            <div class="section-divider"></div>
+
+            <div id="part_b" class="main">
+                <h1>Part B: Feature Matching for Autostitching</h1>
+                <p>For part B, I followed <a href="https://inst.eecs.berkeley.edu/~cs180/fa24/hw/proj4/Papers/MOPS.pdf">this paper</a> to implement
+                    a system for automatically stitching images into a mosaic.
+                </p>
+            </div>
+
+            <div id="detector" class="section">
+                <h2>Harris Interest Point Detector</h2>
+                <p>To automatically find interest points that can be matched into correspondences, I used the Harris interest point detector to locate
+                    all "corners": image patches around an interest point whose sum of squared differences with their immediate neighbors, or their
+                    corner strengths, are above a certain threshold.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/univhall_2.jpg" alt="univhall_2.jpg">
+                        <p>univhall_2.jpg</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./B1/univhall_2.jpg_corners.png" alt="univhall_2.jpg_corners.png">
+                        <p>univhall_2.jpg<br>Harris Corners</p>
+                    </div>
+                </div>
+                <p>As we can see on the above images with all Harris corners overlaid on it, this detector produces extremely dense set of Harris corners
+                    without any suppression.
+                </p>
+            </div>
+
+            <div id="anms" class="section">
+                <h2>Adaptive Non-Maximal Suppression</h2>
+                <p>Since too much interest points causes redundant computations, I used the Adaptive Non-Maximal Suppression (ANMS) algorithm that
+                    reduces the number of interest points while distribute them evenly throughout the image. In ANMS, only interest points that have
+                    the local maximum corner strength in a neighbourhood of radius <code>r</code> pixels are retained. The algorithm starts with
+                    the maximum <code>r</code>, which will find the interest point with global maximum corner strength, and gradually decrease
+                    <code>r</code>, adding more local maximum interest point into the list, until the number of interest points in the
+                    list reached the target amount, which in my case is the top-500 points for each image.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B1/univhall_2.jpg_corners.png" alt="univhall_2.jpg_corners.png">
+                        <p>univhall_2.jpg<br>Without Suppression</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./B1/univhall_2.jpg_anms.png" alt="univhall_2.jpg_anms.png">
+                        <p>univhall_2.jpg<br>ANMS with <code>n_ip = 500</code> and <code>c_robust = 0.9</code></p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="extraction" class="section">
+                <h2>Feature Descriptor Extraction</h2>
+                <p>After ANMS returned the interest points, the next step is to match each interest point with its correspondence
+                    across the image. To do this, I extracted feature descriptors by sampling a 40x40 patch around each interest point,
+                    and downsample the large patches into 8x8 descriptors using a Gaussian low-pass filter. Since the descriptors
+                    are blurred by the low-pass filter, downsampling helps with avoiding aliasing.
+                </p>
+                <p>Each 8x8 descriptor is also bias/gain-normalized such that for each descriptor, the mean of the pixel intensity is 0 and
+                    the standard deviation is 1. This normalization makes descriptors invariant to affine changes in intensity values.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B2/univhall_2.jpg_descriptor_1.jpg" alt="univhall_2.jpg_descriptor_1.jpg">
+                        <p>A Descriptor of univhall_2.jpg<br>+ Low-Pass Filter<br>+ Bias/Gain-Normalization</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./B2/univhall_2.jpg_descriptor_1_color.png" alt="univhall_2.jpg_descriptor_1_color.png">
+                        <p>The Original 40x40 Patch</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B2/night_2.jpg_descriptor_1.jpg" alt="night_2.jpg_descriptor_1.jpg">
+                        <p>A Descriptor of night_2.jpg<br>+ Low-Pass Filter<br>+ Bias/Gain-Normalization</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./B2/night_2.jpg_descriptor_1_color.png" alt="night_2.jpg_descriptor_1_color.png">
+                        <p>The Original 40x40 Patch</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="matching" class="section">
+                <h2>Feature Matching</h2>
+                <p>To match feature descriptors between two images, I first computed the pairwise L2 distances between all descriptors in
+                    one image and all descriptors in the other image. For each descriptor, I then find its nearest neighbor in the distance
+                    matrix, which is its potential matching descriptor in the other image.
+                </p>
+                <p>To increase the certainty for each match, I used
+                    Lowe's Trick that thresholds on the ratio between the distance to the nearest neighbor and the second nearest neighbor.
+                    The ratio will only be below the threshold if the nearest neighbor is a much better match than the second nearest neighbor,
+                    as well as all other further matches, thus is more likely to be the true match.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B3/entrance_2.jpg_entrance_1.jpg_corresponence.png" alt="entrance_2.jpg_entrance_1.jpg_corresponence.png">
+                        <p>entrance_1.jpg & entrance_2.jpg<br>Matched Correspondences with <code>threshold = 0.8</code></p>
+                    </div>
+                </div>
+                <p>While most of the matched correspondences looked correct, some visible outliers were present in the result images.</p>
+            </div>
+
+            <div id="ransac" class="section">
+                <h2>RANSAC for Robust Homography Estimation</h2>
+                <p>As seen in the results of the last part, there are still some incorrect matches between correspondences. Since least-square estimations
+                    are sensitive to outliers, I used a Random Sample Consensus (RANSAC) algorithm to increase the robustness of homography estimation.
+                    For each loop in RANSAC, the algorithm randomly picks 4 pairs of correspondences from the result in the last part, and compute the exact
+                    homography using these 8 points. Then, the algorithm applies the homography to all points and count the number of inliers: points whose
+                    distance to their matched correspondences after warping is less than 2 pixels. The algorithm keeps track of the largest set of inliers
+                    throughtout the loops, and after enough iterations (5000 in this case), uses this largest set of inliers to compute the least-square
+                    homography. Using this RANSAC algorithm, I was able to filter out the correspondences that does not follow the majority homography,
+                    thus increasing the robustness of the homography estimation against outliers.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B4/entrance_2.jpg_entrance_1.jpg_ransac.png" alt="entrance_2.jpg_entrance_1.jpg_ransac.png">
+                        <p>entrance_1.jpg & entrance_2.jpg<br>After RANSAC with 5000 Iterations</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="results" class="section">
+                <h2>Results using Autostitching</h2>
+                <p>I applied all steps above on the same images from part A, and the results are shown below, manually and automatically stitched results
+                    side by side.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A4/univhall_2.jpg_mosaic.png" alt="univhall_2.jpg_mosaic.png">
+                        <p>univhall Manually Stitched Mosaic</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./B4/univhall_2.jpg_automosaic.png" alt="univhall_2.jpg_automosaic.png">
+                        <p>univhall Autostitched Mosaic</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A4/entrance_2.jpg_mosaic.png" alt="entrance_2.jpg_mosaic.png">
+                        <p>entrance Manually Stitched Mosaic</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./B4/entrance_2.jpg_automosaic.png" alt="entrance_2.jpg_automosaic.png">
+                        <p>entrance Autostitched Mosaic</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A4/night_2.jpg_mosaic.png" alt="night_2.jpg_mosaic.png">
+                        <p>night Manually Stitched Mosaic</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./B4/night_2.jpg_automosaic.png" alt="night_2.jpg_automosaic.png">
+                        <p>night Autostitched Mosaic</p>
+                    </div>
+                </div>
+                <p>By showing both manually and automatically stitched
+                    results next to each other, it is easy to see that autostitching produces clearer results and reduces visual artifacts such as ghosting,
+                    since it is not affected by noises and error caused by manual inputs.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B4/univhall_compare.png" alt="univhall_compare.png">
+                        <p>Left: Manual, Right: Autostitched</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <div id="reflection" class="section">
+                <p>The coolest thing I learned from this project is how the computer "understands" an image completely different from human, yet we can use techniques
+                    like Harris corner detection and feature matching to achieve the same, and even better results. The moment that clever techniques like ANMS and RANSAC
+                    filtered out all redundent data and keeped only the best correspondences is also very satisfying.
+                </p>
             </div>
         </main>
     </div>
