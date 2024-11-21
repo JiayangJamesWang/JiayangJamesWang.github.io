@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CS 180 Project 5</title>
+    <link href="https://fonts.googleapis.com/css?family=Merriweather:300,700,300italic,700italic|Source+Sans+Pro:900" rel='stylesheet'>
+    <link href='https://fonts.googleapis.com/css?family=Fira Code' rel='stylesheet'>
+    <style>
+        body {
+            background-color: #fafafa;
+            font-family: "Merriweather", Georgia, serif;
+            font-weight: 300;
+            font-size: 1rem;
+            line-height: 2;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            background-color: #ddddff;
+            padding: 20px;
+            text-align: center;
+        }
+        .content-wrapper {
+            display: flex;
+            flex-grow: 1;
+        }
+        .vertical_slide {
+            overflow-x: auto;
+        }
+        nav {
+            width: 225px;
+            padding: 5;
+            background-color: #fafafa;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: scroll;
+        }
+        nav ul {
+            list-style-type: disc;
+            border-left: 1px;
+        }
+        nav ul li {
+            margin-bottom: 10px;
+        }
+        nav ul li a {
+            text-decoration: none;
+            color: #333;
+            display: block;
+        }
+        .nav-section-divider {
+            border-top: 1px solid #ccc;
+            margin: 10px 0;
+        }
+        .section-divider {
+            border-top: 10px solid #ddddff;
+            margin: 50px 0;
+        }
+        main {
+            flex-grow: 1;
+            margin: auto;
+            padding: 80px;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            margin: auto;
+            width: 80%;
+            padding: 10px;
+            gap: 20px;
+        }
+        .grid-item {
+            border: 5px solid #ddddff;
+            padding: 10px;
+            text-align: center;
+        }
+        .grid-item img {
+            max-width: 100%;
+            max-height: 500px;
+            height: auto;
+        }
+        code {
+            font-family: 'Fira Code';
+            background-color: #f5f0ff;
+            border-radius: 0.25rem;
+            color:#7400f1;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Fun With Diffusion Models</h1>
+        <h2>CS 180 Project 5</h2>
+        <p>Jiayang Wang | jiayang.wang@berkeley.edu</p>
+    </div>
+    <div class="content-wrapper">
+        <vertical_slide>
+            <nav>
+                <ul>
+                    <li><a href="#introduction">Introduction</a></li>
+
+                    <div class="nav-section-divider"></div>
+
+                    <li><a href="#part_a">Part A: The Power of Diffusion Models</a></li>
+                    <ul>
+                        <li><a href="#setup">Setup</a></li>
+                        <li><a href="#forward">Forward Process</a></li>
+                        <li><a href="#classical">Classical Denoising</a></li>
+                        <li><a href="#one-step">One-Step Denoising</a></li>
+                        <li><a href="#iterative">Iterative Denoising</a></li>
+                        <li><a href="#sampling">Diffusion Model Sampling</a></li>
+                        <li><a href="#cfg">Classifier-Free Guidance (CFG)</a></li>
+                        <li><a href="#i2i">Image-to-image Translation</a></li>
+                        <li><a href="#anagram">Visual Anagrams</a></li>
+                        <li><a href="#hybrid">Hybrid Images</a></li>
+                    </ul>
+                    
+                    <div class="nav-section-divider"></div>
+
+                    <li><a href="#part_b">Part B: Diffusion Models from Scratch</a></li>
+                    <ul>
+                        <li><a href="#denoiser">Training a Single-Step Denoising UNet</a></li>
+                        <li><a href="#time-cond">Training a Time-Conditioning Diffusion Model</a></li>
+                        <li><a href="#class-cond">Adding Class-Conditioning</a></li>
+                    </ul>
+
+                    <div class="nav-section-divider"></div>
+
+                    <li><a href="#reflection">Reflection</a></li>
+                </ul>
+            </nav>
+        </vertical_slide>
+        <main>
+            <div id="introduction" class="main">
+                <h1>Introduction</h1>
+                <p>This project explores the implementation and deployment of diffusion models for image generations.
+                </p>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <div id="part_a" class="main">
+                <h1>Part A: The Power of Diffusion Models</h1>
+            </div>
+            <div id="setup" class="section">
+                <h2>Setup</h2>
+                <p>For part A of the project, I used the <a href="https://huggingface.co/DeepFloyd/IF-I-XL-v1.0">DeepFloyd/IF-I-XL-v1.0</a>
+                    text-to-image diffusion model to produce images of size 64*64 using various prompts and techniques. The random seed I used is 360.<br>
+                    Below are the example output of the model using different inference steps marked as <code>num_inference_steps</code>
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A1/step10_1.png" alt="step10_1.png">
+                        <p>an oil painting of a snowy mountain village<br><code>num_inference_steps = 10</code></p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A1/step10_2.png" alt="step10_2.png">
+                        <p>a man wearing a hat<br><code>num_inference_steps = 10</code></p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A1/step10_3.png" alt="step10_3.png">
+                        <p>a rocket ship<br><code>num_inference_steps = 10</code></p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A1/step20_1.png" alt="step20_1.png">
+                        <p>an oil painting of a snowy mountain village<br><code>num_inference_steps = 20</code></p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A1/step20_2.png" alt="step20_2.png">
+                        <p>a man wearing a hat<br><code>num_inference_steps = 20</code></p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A1/step20_3.png" alt="step20_3.png">
+                        <p>a rocket ship<br><code>num_inference_steps = 20</code></p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A1/step30_1.png" alt="step30_1.png">
+                        <p>an oil painting of a snowy mountain village<br><code>num_inference_steps = 30</code></p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A1/step30_2.png" alt="step30_2.png">
+                        <p>a man wearing a hat<br><code>num_inference_steps = 30</code></p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A1/step30_3.png" alt="step30_3.png">
+                        <p>a rocket ship<br><code>num_inference_steps = 30</code></p>
+                    </div>
+                </div>
+                <p>
+                    The quality of the output images depends on both the text prompts and the value of <code>num_inference_steps</code>. We can see that
+                    this model generates relatively realistic images with human related prompt, but gets more abstract when generating images of objects,
+                    as seen in the "a rocket ship" images. Higher <code>num_inference_steps</code> adds more details to the output, increasing the overall quality.
+                </p>
+            </div>
+
+            <div id="forward" class="section">
+                <h1>Sampling Loops</h1>
+                <h2>Implementing the Forward Process</h2>
+                <p>
+                    The forward process of diffusion takes a clean image and progressively adds noise to it at each timestep <code>t</code>,
+                    as shown in the formula.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A/forward.png" alt="forward.png">
+                    </div>
+                </div>
+                <p><code>t = 0</code> corresponds to the clean image and larger <code>t</code> corresponds to more noise added. Following the formula,
+                    I implemented the forward process and generated the test image at <code>t = [250, 500, 750]</code>.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A2/0.png" alt="0.png">
+                        <p>Berkeley Campanile</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A2/250.png" alt="250.png">
+                        <p>Noisy Campanile at <code>t = 250</code></p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A2/500.png" alt="500.png">
+                        <p>Noisy Campanile at <code>t = 500</code></p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A2/750.png" alt="750.png">
+                        <p>Noisy Campanile at <code>t = 750</code></p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="classical" class="section">
+                <h2>Classical Denoising</h2>
+                <p>
+                    A classical method of denoising is applying Gaussian blur on the noisy images and try to filter out the high frequency noise.
+                    Below are the results of applying this method on the previously noised images with <code>kernel_size = 5</code> and <code>sigma = 1</code>.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A2/250.png" alt="250.png">
+                        <p>Noisy Campanile at <code>t = 250</code></p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A2/500.png" alt="500.png">
+                        <p>Noisy Campanile at <code>t = 500</code></p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A2/750.png" alt="750.png">
+                        <p>Noisy Campanile at <code>t = 750</code></p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A3/denoise_250.png" alt="denoise_250.png">
+                        <p>Gaussian Blur Denoising at <code>t = 250</code></p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A3/denoise_500.png" alt="denoise_500.png">
+                        <p>Gaussian Blur Denoising at <code>t = 500</code></p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A3/denoise_750.png" alt="denoise_750.png">
+                        <p>Gaussian Blur Denoising at <code>t = 750</code></p>
+                    </div>
+                </div>
+                <p>It is clear that classical denoising does not work well on these noisy images, and we need a better approach.
+                </p>
+            </div>
+
+            <div id="one-step" class="section">
+                <h2>One-Step Denoising</h2>
+                <p>The stage 1 UNet of the DeepFloyd diffusion model is a pretrained denoiser that predicts the Gaussian noise
+                    added to the image. Thus, removing the predicted noise from the noisy image will result in an estimation that
+                    is close to the original clean image.
+                    As the UNet is conditioned on the amount of Gaussian noise by timestep t, I passed in <code>t = [250, 500, 750]</code>
+                    with the corresponding noisy images, and got the following results:
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A2/250.png" alt="250.png">
+                        <p>Noisy Campanile at <code>t = 250</code></p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A2/500.png" alt="500.png">
+                        <p>Noisy Campanile at <code>t = 500</code></p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A2/750.png" alt="750.png">
+                        <p>Noisy Campanile at <code>t = 750</code></p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A4/denoised_250.png" alt="denoised_250.png">
+                        <p>One-Step Denoised Campanile at <code>t = 250</code></p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A4/denoised_500.png" alt="denoised_500.png">
+                        <p>One-Step Denoised Campanile at <code>t = 500</code></p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A4/denoised_750.png" alt="denoised_750.png">
+                        <p>One-Step Denoised Campanile at <code>t = 750</code></p>
+                    </div>
+                </div>
+                <p>The result of this one-step denoising is already much better than the results of classical denoising. However, the quality
+                    dropoff happens when <code>t</code> is higher and the image is very noisy.
+                </p>
+            </div>
+
+            <div id="iterative" class="section">
+                <h2>Iterative Denoising</h2>
+                <p>The reason of quality dropoff is that diffusion models are designed to denoise iteratively instead of only one step.<br>
+                    Following the formula below, at each monotonically decreasing timestep in the list <code>strided_timesteps</code>, the model estimates a less noisy
+                    image by removing partial predicted noise from the noisy image, until <code>t</code> is close to 0 and the image is clean.
+                    In this case, I started at <code>t = 990</code> with a stride of 30.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A5/noisy_90.png " alt="noisy_90.png">
+                        <p>Noisy Campanile at <code>t = 90</code></p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A5/noisy_240.png " alt="noisy_240.png">
+                        <p>Noisy Campanile at <code>t = 240</code></p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A5/noisy_390.png " alt="noisy_390.png">
+                        <p>Noisy Campanile at <code>t = 390</code></p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A5/noisy_540.png " alt="noisy_540.png">
+                        <p>Noisy Campanile at <code>t = 540</code></p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A5/noisy_690.png " alt="noisy_690.png">
+                        <p>Noisy Campanile at <code>t = 690</code></p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A5/original.png " alt="original.png">
+                        <p>Original</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A5/iterative.png " alt="iterative.png">
+                        <p>Iteratively Denoised Campanile</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A5/onestep.png " alt="onestep.png">
+                        <p>One-Step Denoised Campanile</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A5/gaussian.png " alt="gaussian.png">
+                        <p>Gaussian Blurred Campanile</p>
+                    </div>
+                </div>
+                <p>Comparing the outputs of the three denoising methods, iterative denoising produces the clearest result that is also the most similar to
+                    the original image.
+                </p>
+            </div>
+
+            <div id="sampling" class="section">
+                <h2>Diffusion Model Sampling</h2>
+                <p>Using the same iterative denoising as above, we can also generate image from scratch. Starting from pure noise, timestep <code>strided_timesteps[0]</code>,
+                    and the prompt "a high quality photo" the diffusion model will denoise this pure noise while following the prompt.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A6/1.png" alt="1.png">
+                        <p>Sample 1</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A6/2.png" alt="2.png">
+                        <p>Sample 2</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A6/3.png" alt="3.png">
+                        <p>Sample 3</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A6/4.png" alt="4.png">
+                        <p>Sample 4</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A6/5.png" alt="5.png">
+                        <p>Sample 5</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="cfg" class="section">
+                <h2>Classifier-Free Guidance (CFG)</h2>
+                <p>The 5 generated images in the last part are reasonable "real photos", but look bland and have relatively low color saturation.<br>
+                    Classifier-Free Guidance (CFG) improves the output quality by computing both compute both a conditional and an unconditional noise estimate,
+                    denoted <code>ε_c</code> and <code>ε_u</code>. By following the formula below and setting <code>γ = 7</code>, CFG will push the actual noise estimate
+                    toward the direction of the conditional noise estimate, thus essentially increasing the effectiveness of prompt conditioning.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A7/1.png" alt="1.png">
+                        <p>Sample 1 with CFG</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A7/2.png" alt="2.png">
+                        <p>Sample 2 with CFG</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A7/3.png" alt="3.png">
+                        <p>Sample 3 with CFG</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A7/4.png" alt="4.png">
+                        <p>Sample 4 with CFG</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A7/5.png" alt="5.png">
+                        <p>Sample 5 with CFG</p>
+                    </div>
+                </div>
+                <p>While following the same steps as in the last part, the resulting image with CFG and <code>γ = 7</code> has much higher quality.
+                </p>
+            </div>
+
+            <div id="i2i" class="section">
+                <h2>Image-to-image Translation</h2>
+                <p>With iterative denoising and CFG, we can use a clean test image as the base image, add various amount noise to it, and then denoise without any conditioning.
+                    The result of this SDEdit algorithm will be images similar to the test image, with higher value of <code>i_start</code> in <code>strided_timesteps[i_start]</code> producing more
+                    similar images.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A8/1.png" alt="1.png">
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A8/2.png" alt="2.png">
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A8/3.png" alt="3.png">
+                    </div>
+                </div>
+                <h3>Editing Hand-Drawn and Web Images</h3>
+                <p>The procedure in the last part works vert well if we want to project a nonrealistic image, including painting and sketches, onto the manifold of natural images.
+                    I experimented with some of the hand-drawn images, or realistic images with some scribbles on them, and the results are quite interesting.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A9/1.png" alt="1.png">
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A9/2.png" alt="2.png">
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A9/3.png" alt="3.png">
+                    </div>
+                </div>
+                <h3>Inpainting</h3>
+                <p>Another way to use this procedure is inpainting, where we can define a mask on a clean image, such that at each step of the diffusion denoising loop, the pixels
+                    with mask equal to 0 is replaced with the corresponding pixels in the original image. This results in only the pixels with mask value 1 to be replaced with a new
+                    generated image. The results are really interesting!
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A10/1.png" alt="1.png">
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A10/2.png" alt="2.png">
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A10/3.png" alt="3.png">
+                    </div>
+                </div>
+                <h3>Text-Conditional Image-to-image Translation</h3>
+                <p>The image-to-image translation procedure can also be conditioned by text prompts other than the baseline "a high quality photo". By adding controls using text,
+                    the output images gradually look more like the original image when <code>i_start</code> is higher, and look more like the text prompt when <code>i_start</code>
+                    is lower. When <code>i_start</code> is around 10, the output image is a nice hybrid between the original image and the text prompt.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A11/1.png" alt="1.png">
+                        <p>"a rocket ship"</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A11/2.png" alt="2.png">
+                        <p>"a photo of a dog"</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A11/3.png" alt="3.png">
+                        <p>"a man wearing a hat"</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="anagram" class="section">
+                <h2>Visual Anagrams</h2>
+                <p>By manipulating the noise estimate at each timestep, diffusion models can produce many interesting results. To generate a visual anagram that looks like one thing,
+                    but when flipped upside down will reveal another thing, I combined the noise estimate at each timestep for two prompts, and combined one noise with another noise
+                    but flipped. The results are shown below.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A12/1.png" alt="1.png">
+                        <p>"an oil painting of people around a campfire"</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A12/1_flip.png" alt="1_flip.png">
+                        <p>"an oil painting of an old man"</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A12/2.png" alt="2.png">
+                        <p>"an oil painting of a snowy mountain village"</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A12/2_flip.png" alt="2_flip.png">
+                        <p>"a man wearing a hat"</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A12/3.png" alt="3.png">
+                        <p>"a photo of the amalfi cost"</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A12/3_flip.png" alt="3_flip.png">
+                        <p>"a photo of a hipster barista"</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="hybrid" class="section">
+                <h2>Hybrid Images</h2>
+                <p>Another fun thing to do with diffusion models is generating hybrid images, which display one image when looking far away, and another image when closing up.
+                    Instead of averaging noise estimate at each timestep for two prompts, I created composite noise estimate by combining low frequencies from one noise estimate
+                    with high frequencies of the other. For both the high-pass filter and the low-pass filter, I set <code>kernel_size = 33</code> and <code>sigma = 2</code>. The
+                    result images indeed have the hybrid image behavior!
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A13/1.png" alt="1.png">
+                        <p>Low-pass: "a lithograph of a skull"<br>
+                            High-pass: "a lithograph of waterfalls"<br>
+                        </p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A13/2.png" alt="2.png">
+                        <p>Low-pass: "a photo of the amalfi cost"<br>
+                            High-pass: "a photo of a dog"<br>
+                        </p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A13/3.png" alt="3.png">
+                        <p>Low-pass: "an oil painting of an old man"<br>
+                            High-pass: "an oil painting of people around a campfire"<br>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section-divider"></div>
+
+            <div id="part_b" class="main">
+                <h1>Part B: Diffusion Models from Scratch</h1>
+                <p>In part B, I trained diffusion models on MNIST from scratch, and added various conditioning to the UNets.
+                </p>
+            </div>
+
+            <div id="denoiser" class="section">
+                <h2>Training a Single-Step Denoising UNet</h2>
+                <p>
+                    I first started with implementing a simple one-step denoiser. The denoiser is trained on optimizing the following L2 loss:
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B/denoising_loss.png" alt="denoising_loss.png">
+                    </div>
+                </div>
+                <p>
+                    <code>D_θ(z)</code> is the output of the denoiser, and <code>x</code> is the clean image.<br>
+                </p>
+                <h3>Implementing the UNet</h2>
+                <p>
+                    I implemented the denoiser as a UNet with the following downsampling and upsampling blocks with skip connections as shown below.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B/unconditional_arch.png" alt="unconditional_arch.png">
+                    </div>
+                </div>
+                <p>
+                    The operations in the diagram above are the following:
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B/atomic_ops_new.png" alt="atomic_ops_new.png">
+                    </div>
+                </div>
+                <h3>Using the UNet to Train a Denoiser</h2>
+                <p>
+                    In the forward noising process, I passed in training pairs <code>(z, x)</code>, where the noisy image <code>z</code> is created by adding
+                    a Gaussian noise to the training image <code>x</code> for each training batch. <code>σ</code> is a hyperparameter indicating the amount
+                    of noise added.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B/denoising_forward.png" alt="denoising_forward.png">
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B1/noise_1.png" alt="noise_1.png">
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B1/noise_2.png" alt="noise_2.png">
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B1/noise_3.png" alt="noise_3.png">
+                    </div>
+                </div>
+                <p>
+                    For the actual training process, I used the following parameters:<br>
+                    <code>sigma = 0.5</code><br>
+                    <code>batch_size = 256</code><br>
+                    <code>num_epochs = 5</code><br>
+                    Adam optimizer with <code>learning_rate = 1e-4</code><br>
+                    UNet with hidden dimension <code>num_hidden = 128</code><br>
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B1/loss.png" alt="loss.png">
+                    </div>
+                </div>
+                <p>
+                    Some sample results after the 1st and 5th epoch are displayed below:
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B1/output_1.png" alt="output_1.png">
+                        <p>Results After 1 Epoch of Training</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B1/output_5.png" alt="output_5.png">
+                        <p>Results After 5 Epochs of Training</p>
+                    </div>
+                </div>
+                <h3>Out-of-Distribution Testing</h2>
+                <p>
+                    While this denoiser is trained on MNIST digits noised with <code>σ = 0.5</code>, I also test the denoiser on denoising test set digits
+                    with varying levels of noise.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B1/distribution_1.png" alt="distribution_1.png">
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B1/distribution_2.png" alt="distribution_2.png">
+                        <p>Results with Varying Noise Levels</p>
+                    </div>
+                </div>
+                <p>
+                    The result showed that this denoiser is not generalized enough, and performs poorly with higher <code>σ</code>.
+                </p>
+            </div>
+
+            <div id="time-cond" class="section">
+                <h2>Training a Time-Conditioning Diffusion Model</h2>
+                <p>
+                    To train the full diffusion model similar to DeepFloyd, I changed the UNet to predict the added noise <code>ε</code>
+                    instead of the clean image. The new loss function is the following:
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B/diffusion_loss.png" alt="diffusion_loss.png">
+                    </div>
+                </div>
+                <p>
+                    <code>ε_θ(z)</code> is the noise estimate of the diffusion UNet.
+                </p>
+                <p>
+                    Instead of one-step denoising like the denoiser in the last part, iteratively denoise the image generally yield better results, similar to
+                    the conclusion in part A. Therefore, we need to inject the scalar <code>t</code> into the UNet to make it time-conditioned.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B/diffusion_time_loss.png" alt="diffusion_time_loss.png">
+                    </div>
+                </div>
+                <p>
+                    Since we only need to generate MNIST digits of size 28*28, I set <code>T = 300</code> instead of 1000, and defined <code>α</code> and <code>β</code>
+                    in <code>ddpm_schedule</code> following the below procedure similar to part A.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B/ddpm_schedule.png" alt="ddpm_schedule.png">
+                    </div>
+                </div>
+                <p>
+                    The new UNet architecture is shown below. I inject the time-conditioning signal with a new operator <code>FCBlock</code>:
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B/conditional_arch.png" alt="conditional_arch.png">
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B/fc_long.png" alt="fc_long.png">
+                    </div>
+                </div>
+                <h3>Training the UNet</h2>
+                <p>
+                    I trained the UNet using the following training algorithm and parameters.<br>
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B/algo1_t_only.png" alt="algo1_t_only.png">
+                    </div>
+                </div>
+                <p>
+                    <code>batch_size = 128</code><br>
+                    <code>num_epochs = 20</code><br>
+                    Adam optimizer with initial<code>learning_rate = 1e-3</code><br>
+                    Exponential learning rate decay scheduler <code>scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.1 ** (1.0 / num_epochs))</code><br>
+                    UNet with hidden dimension <code>num_hidden = 64</code><br>
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B2/loss.png" alt="loss.png">
+                    </div>
+                </div>
+                <h3>Sampling from the UNet</h3>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B/algo2_t_only.png" alt="algo2_t_only.png">
+                    </div>
+                </div>
+                <p>
+                    Sampling using the following algorithm on epoch 5 and epoch 20, we can see the progress of training.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B2/output_5.png" alt="output_5.png">
+                        <p>Results After 5 Epochs of Training</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B2/output_20.png" alt="output_20.png">
+                        <p>Results After 20 Epochs of Training</p>
+                    </div>
+                </div>
+                <p>
+                    Notice that the results had a clear and distinguishable shape of digits, but we have no ways to control which digit the model output.
+                </p>
+            </div>
+
+            <div id="class-cond" class="section">
+                <h2>Adding Class-Conditioning to UNet</h2>
+                <p>
+                    To add more control over what digit the model generates, I also tried conditioning the UNet on the class of the digits 0-9, by adding 2 more <code>FCBlock</code>
+                    to the UNet. The new <code>FCBlock</code>s take a one-hot conditioning vector on the class of the digit 0-9 as input. To retain the function of generating without the
+                    class condition, I set the dropout rate to 0.1, such that 10% of the time, the class conditioning vector is set to all zero, thus effectively removing the conditioning.
+                </p>
+                <p>
+                    Following the below training algorithm with the conditioning vector <code>c</code>, I trained the new class-conditioned UNet with the same parameters
+                    as above.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B/algo3_c.png" alt="algo3_c.png">
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B3/loss.png" alt="loss.png">
+                    </div>
+                </div>
+                <h3>Sampling from the Class-Conditioned UNet</h3>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B/algo4_c.png" alt="algo4_c.png">
+                    </div>
+                </div>
+                <p>
+                    For the sampling process, besides using the conditioning vector <code>c</code> to control the digit generated, we also need CFG since part A shows that
+                    conditioning need classifier-free guidance to be effective. I used CFG with <code>γ = 5.0</code>
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B3/output_5.png " alt="output_5.png">
+                        <p>Results After 5 Epochs of Training</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B3/output_20.png" alt="output_20.png">
+                        <p>Results After 20 Epochs of Training</p>
+                    </div>
+                </div>
+                <p>
+                    As we can see, the result this time, especially after 20 epochs of training, is much better in both quality and control.
+                </p>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <div id="reflection" class="section">
+                <p>This project is easily the most interesting one out of all the projects. The fact that while the reason that CFG greatly improves the conditioned result
+                    is still up to vigorous debate, it simply "just works" is particularly fascinating to me!
+                </p>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
