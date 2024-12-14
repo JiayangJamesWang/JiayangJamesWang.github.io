@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CS 180 Final Projects</title>
+    <link href="https://fonts.googleapis.com/css?family=Merriweather:300,700,300italic,700italic|Source+Sans+Pro:900" rel='stylesheet'>
+    <link href='https://fonts.googleapis.com/css?family=Fira Code' rel='stylesheet'>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script type="text/javascript" id="MathJax-script" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.0.0/es5/latest?tex-mml-chtml.js">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+    <style>
+        body {
+            background-color: #fafafa;
+            font-family: "Merriweather", Georgia, serif;
+            font-weight: 300;
+            font-size: 1rem;
+            line-height: 2;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            background-color: #ddddff;
+            padding: 20px;
+            text-align: center;
+        }
+        .content-wrapper {
+            display: flex;
+            flex-grow: 1;
+        }
+        .vertical_slide {
+            overflow-x: auto;
+        }
+        nav {
+            width: 225px;
+            padding: 5;
+            background-color: #fafafa;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: scroll;
+        }
+        nav ul {
+            list-style-type: disc;
+            border-left: 1px;
+        }
+        nav ul li {
+            margin-bottom: 10px;
+        }
+        nav ul li a {
+            text-decoration: none;
+            color: #333;
+            display: block;
+        }
+        .nav-section-divider {
+            border-top: 1px solid #ccc;
+            margin: 10px 0;
+        }
+        .section-divider {
+            border-top: 10px solid #ddddff;
+            margin: 50px 0;
+        }
+        main {
+            flex-grow: 1;
+            margin: auto;
+            padding: 80px;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            margin: auto;
+            width: 80%;
+            padding: 10px;
+            gap: 20px;
+        }
+        .grid-item {
+            border: 5px solid #ddddff;
+            padding: 10px;
+            text-align: center;
+        }
+        .grid-item img {
+            max-width: 100%;
+            max-height: 500px;
+            height: auto;
+        }
+        code {
+            font-family: 'Fira Code';
+            background-color: #f5f0ff;
+            border-radius: 0.25rem;
+            color:#7400f1;
+        }
+        code-2 {
+            font-family: 'Fira Code';
+            background-color: #f5f0ff;
+            border-radius: 0.25rem;
+            color:#ff0000;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Image Stitching & Gradient Domain Fusion</h1>
+        <h2>CS 180 Final Projects</h2>
+        <p>Jiayang Wang | jiayang.wang@berkeley.edu</p>
+    </div>
+    <div class="content-wrapper">
+        <vertical_slide>
+            <nav>
+                <ul>
+                    <li><a href="#introduction">Introduction</a></li>
+
+                    <div class="nav-section-divider"></div>
+
+                    <li><a href="#quilt">Image Quilting</a></li>
+                    <ul>
+                        <li><a href="#random">Randomly Sampled Textures</a></li>
+                        <li><a href="#overlap">Overlapping Patches</a></li>
+                        <li><a href="#seam">Seam Finding</a></li>
+                        <li><a href="#transfer">Texture Transfer</a></li>
+                    </ul>
+                    
+                    <div class="nav-section-divider"></div>
+
+                    <li><a href="#fusion">Gradient Domain Fusion</a></li>
+                    <ul>
+                        <li><a href="#toy">Toy Problem</a></li>
+                        <li><a href="#poisson">Poisson Blending</a></li>
+                        <li><a href="#mixed">Bells & Whistles: Mixed Gradients</a></li>
+                    </ul>
+                </ul>
+            </nav>
+        </vertical_slide>
+        <main>
+            <div id="introduction" class="main">
+                <h1>Introduction</h1>
+                <p>The final projects explored some interest methods of manipulation, including the image quilting algorithm for texture synthesis and transfer, and
+                    the gradient domain processing technique widely used in blending, tone-mapping, and non-photorealistic rendering.
+                </p>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <div id="quilt" class="main">
+                <h1>Image Quilting</h1>
+                <p>A texture is an image's structure of colors and intensities. The image quilting algorithm aims to achieve both texture synthesis, creating texture images larger than the original small samples, and texture transfer,
+                    preserving the shape of the image while changing the overall texture.
+                </p>
+            </div>
+            <div id="random" class="section">
+                <h2>Randomly Sampled Textures</h2>
+                <p>To start synthesize target texture images from a single source sample, I implemented a naive function <code>quilt_random(sample, out_size, patch_size)</code>, that split the target image of <code>out_size</code> by
+                    <code>out_size</code> into grids, and fill each grid with a random patch of size <code>patch_size</code> from the source, starting from the upper-left corner.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/samples_quilting/bricks_small.jpg" alt="bricks_small.jpg">
+                        <p>Sample</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A1/result.png" alt="result.png">
+                        <p>Result<br><code>out_size = 300</code><br><code>patch_size = 30</code></p>
+                    </div>
+                </div>
+                <p>
+                    The output images did resembled the texture of the source image, but the seams between patches in the grids are clearly visible, and most neighboring patches did not connect at all.
+                </p>
+            </div>
+
+            <div id="overlap" class="section">
+                <h2>Overlapping Patches</h2>
+                <p>To solve the discontinuities, instead of choosing each patch randomly, each next patch should be similar to the neighboring patches, which the similarity can be solved using the
+                    sum of squared differences (SSD). The new function <code>quilt_simple(sample, out_size, patch_size, overlap, tol)</code> starts by sampling a random patch for the upper-left corner. For all further patches
+                    in the grid, the function will overlap them on top of the existing patches by <code>overlap</code> pixels. To select the next patch,
+                    the function calculates the SSD costs between the <code>overlap</code>-wide overlapping region and all possible patches in the source image, and choose one of the <code>tol</code> patches that
+                    have the smallest SSD costs. The goal of this selection algorithm is to minimize the discontinuities in the output image while preserving enough randomness such that the result feels natural.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/samples_quilting/bricks_small.jpg" alt="bricks_small.jpg">
+                        <p>Sample 1</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A2/result.png" alt="result.png">
+                        <p>Result<br><code>out_size = 300</code><br><code>patch_size = 40</code><br><code>overlap = 20</code><br><code>tol = 20</code></p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/samples_quilting/texture.png" alt="texture.png">
+                        <p>Sample 2</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A2/result_2.png" alt="result_2.png">
+                        <p>Result<br><code>out_size = 300</code><br><code>patch_size = 40</code><br><code>overlap = 20</code><br><code>tol = 10</code></p>
+                    </div>
+                </div>
+                <p>Since patches are chosen with some guidance, the output images of <code>quilt_simple</code> felt more connected. However, noticible edge artifacts still presented between many patches.
+                </p>
+            </div>
+
+            <div id="seam" class="section">
+                <h2>Seam Finding</h2>
+                <p>One way to remove edge artifacts from the overlapping patches is the seam finding technique. For each newly sampled patch in the <code>quilt_cut</code> function, this technique finds a contiguous path from the left-to-right and up-to-down
+                    sides of the patch, that minimizes the square differences of the existing output image and the newly sampled patch along the path.
+                    <br>
+                    Below is a visulization of the technique on a single patch.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A3/original.png" alt="original.png">
+                        <p>Existing Output Image</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A3/patch1.png" alt="patch1.png">
+                        <p>Newly Sampled Patch</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A3/horizontal.png" alt="horizontal.png">
+                        <p>Horizontal Path</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A3/vertical.png" alt="vertical.png">
+                        <p>Vertical Path</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A3/combined.png" alt="combined.png">
+                        <p>Combined Path</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./A3/cut.png" alt="cut.png">
+                        <p>Blended Patch with Cut</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A3/blend.png" alt="blend.png">
+                        <p>Blended Patch</p>
+                    </div>
+                </div>
+                <p>As shown in the visulization, by making this path a mask and overlap the new patch base on this mask,
+                    this technique smooths out the seams between patches, and thus makes the output images seem more connected.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/samples_quilting/bricks_small.jpg" alt="bricks_small.jpg">
+                        <p>Sample 1</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A3/result.png" alt="result.png">
+                        <p>Result<br><code>out_size = 300</code><br><code>patch_size = 30</code><br><code>overlap = 20</code><br><code>tol = 20</code></p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/samples_quilting/texture.png" alt="texture.png">
+                        <p>Sample 2</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A3/result_2.png" alt="result.png">
+                        <p>Result<br><code>out_size = 300</code><br><code>patch_size = 30</code><br><code>overlap = 20</code><br><code>tol = 20</code></p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="transfer" class="section">
+                <h2>Texture Transfer</h2>
+                <p>The <code>quilt_cut</code> function in the last part can also be used to perform texture transfer, which in addition to synthesize texture from a source image, uses an additional guidance image to guide the structure of the output image, thus
+                    "transfering" the texture from the source image to the guidance image. 
+                    To implement this <code>texture_transfer</code> function, instead of calculating the SSD costs between the overlapping region and the source image, it also calculates the SSD costs between the overlapping region and the guidance image, and
+                    combine two costs based on the <code>alpha</code> parameter, such that <code>cost = alpha * cost_source + (1 - alpha) * cost_guidance</code>.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/samples_quilting/sketch.png" alt="sketch.png">
+                        <p>Sketch</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./data/samples_quilting/feynman.png" alt="feynman.png">
+                        <p>Feynman</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A4/transfer.png" alt="transfer.png">
+                        <p>Feynman with Sketch Texture<br><code>alpha = 0.25</code><br><code>patch_size = 25</code><br><code>overlap = 11</code><br><code>tol = 20</code></p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/samples_quilting/toast.jpg" alt="toast.jpg">
+                        <p>Toast</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./data/samples_quilting/Efros.png" alt="Efros.png">
+                        <p>Efros</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./A4/Efroast.png" alt="Efroast.png">
+                        <p>Efros with Toast Texture (Efroast)<br><code>alpha = 0.2</code><br><code>patch_size = 15</code><br><code>overlap = 7</code><br><code>tol = 20</code></p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section-divider"></div>
+
+            <div id="fusion" class="main">
+                <h1>Gradient Domain Fusion</h1>
+                <p>When naively overlap an image onto another, the seams in the overlapping region and the background differences are clearly noticible. This part of the project focused on Poisson blending,
+                    a technique that seamlessly blend an object from a source image into the target image.
+                </p>
+            </div>
+
+            <div id="toy" class="section">
+                <h2>Toy Problem</h2>
+                <p>Starting with a toy example, an image can be reconstructed from its gradient values and one pixel intensity only.
+                    <br>
+                    Let \(s(x, y)\) be the intensity of the source image at \((x, y)\), and the value to solve for as \(v(x, y)\).
+                    <br>
+                    For each pixel, there are two objectives:
+                    <br>
+                    - Minimize \((v(x+1,y)-v(x,y) - (s(x+1,y)-s(x,y)))^2\) such that the \(x\)-gradients of \(v\) should closely match the \(x\)-gradients of \(s\).
+                    <br>
+                    - Minimize \((v(x,y+1)-v(x,y) - (s(x,y+1)-s(x,y)))^2\) such that the \(y\)-gradients of \(v\) should closely match the \(y\)-gradients of \(s\).
+                    <br>
+                    To make sure that the reconstructed image resemble the source image, one pixel intensity must be specified as a reference, therefore one more objective is
+                    <br>
+                    - Minimize \((v(1,1)-s(1,1))^2\) such that the top left corners of the two images should be the same intensity.
+                    <br>
+                    Writing all objective functions as a set of least squares constraints and solve for this optimization, the least squares solution indeed recover the original image.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/samples_fusion/toy_problem.png" alt="toy_problem.png">
+                        <p>Source Image</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./B1/result.png" alt="result.png">
+                        <p>Reconstructed Image</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="poisson" class="section">
+                <h2>Poisson Blending</h2>
+                <p>Extending on the toy problem, the actual Poisson blending technique blend an object from a source image into the target image seamlessly
+                    by calculating intensity values for the target pixels that maximally preserve the gradient of the source object with minimum change, which
+                    can be written as the following blending constraints for each pixel.
+                    \[
+                    \mathbf{v} = \arg\min_{\mathbf{v}} \left( \sum_{i \in S, j \in \mathcal{N}_i \cap S} \left( (v_i - v_j) - (s_i - s_j) \right)^2 + \sum_{i \in S, j \in \mathcal{N}_i \cap \neg S} \left( (v_i - t_j) - (s_i - s_j) \right)^2 \right)
+                    \]
+                    Each \(i\) is a pixel in the source region \(S\), and each \(j\) is the 4-neighbor of the corresponding \(i\). The first summation term constraints on the similarity between gradients in \(S\) and the source image, and
+                    the second term constraints on the similarity between gradients in the boundary of \(S\) and the target image.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/samples_fusion/penguin-chick.jpeg" alt="penguin-chick.jpeg">
+                        <p>Source Image</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./data/samples_fusion/im2.JPG" alt="im2.JPG">
+                        <p>Target Image</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./B2/combine.png" alt="combine.png">
+                        <p>Overlap</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./B2/result_1.png" alt="result_1.png">
+                        <p>Poisson Blending Result</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/samples_fusion/penguin.jpg" alt="penguin.jpg">
+                        <p>Source Image</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./data/samples_fusion/brittle.png" alt="brittle.png">
+                        <p>Target Image</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./B2/result_2.png" alt="result_2.png">
+                        <p>Poisson Blending Result</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/samples_fusion/moon.png" alt="moon.png">
+                        <p>Source Image</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./data/samples_fusion/night.png" alt="night.png">
+                        <p>Target Image</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./B2/result_3.png" alt="result_3.png">
+                        <p>Poisson Blending Result</p>
+                    </div>
+                </div>
+                <p>
+                    A side effect of this technique is that the overall intensities are ignored, such that the object might change in color after blending. The technique also performs best only when the background of the object in the source region
+                    and the surronding area of the target region have a similar color. As seen in the last result, the color of the moon changed significantly due to the differences between two background colors.
+                </p>
+            </div>
+
+            <div id="mixed" class="section">
+                <h2>Bells & Whistles: Mixed Gradients</h2>
+                <p>Instead of using the source gradient \((s_i - s_j)\) term in the blending constraints as the only guide, I also tried the following
+                    \[
+                    \mathbf{v} = \arg\min_{\mathbf{v}} \left( \sum_{i \in S, j \in \mathcal{N}_i \cap S} \left( (v_i - v_j) - d_{ij} \right)^2 + \sum_{i \in S, j \in \mathcal{N}_i \cap \neg S} \left( (v_i - t_j) - d_{ij} \right)^2 \right)
+                    \]
+                    where \(d_{ij}\) is the value of the gradient from the source image \((s_i - s_j)\) or the target image \((t_i - t_j)\) with larger magnitude. This will use the gradient in source or target with the larger magnitude as the guide.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B3/result_1.png" alt="result_1.png">
+                        <p>Mixed Gradients Result</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./B2/result_1.png" alt="result_1.png">
+                        <p>Poisson Blending Result from Last Part</p>
+                    </div>
+                </div>
+                <p>Notice that this result with mixed gradients blends the penguin with the background better than the last part. The mixed gradient term in the blending constraints essentially make the source image with a
+                    relatively plain background semitransparent. Below are some more blending results that benefits from this feature.
+                </p>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/samples_fusion/gradient.png" alt="gradient.png">
+                        <p>Source Image</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./data/samples_fusion/synthesized.png" alt="synthesized.png">
+                        <p>Target Image</p>
+                    </div>
+                    
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./B3/result_2.png" alt="result_2.png">
+                        <p>Mixed Gradients Result</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./B2/result_5.png" alt="result_5.png">
+                        <p>Poisson Blending Result from Last Part</p>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="./data/samples_fusion/neon_efraple.jpg" alt="neon_efraple.jpg">
+                        <p>Source Image</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./data/samples_fusion/planet.jpg" alt="planet.jpg">
+                        <p>Target Image</p>
+                    </div>
+                    <div class="grid-item">
+                        <img src="./B3/result_3.png" alt="result_3.png">
+                        <p>Mixed Gradients Result<br><code-2>He is watching you in the distance...</code-2></p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
